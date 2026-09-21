@@ -81,14 +81,26 @@ export function sortFaces(list: Photo[]): Photo[] {
 }
 
 /** Evita que dos fotos de la misma sesión (mismo sujeto/lugar) queden a menos de `window` posiciones. */
-export function spreadSessions(list: Photo[], window = 6): Photo[] {
+export function spreadSessions(list: Photo[], window = 6, lookahead = 16): Photo[] {
   const out: Photo[] = [];
   const rest = list.slice();
+  const left = new Map<string, number>();
+  for (const p of rest) left.set(p.proj || '', (left.get(p.proj || '') || 0) + 1);
   while (rest.length) {
-    const recent = out.slice(-window).map((p) => p.proj);
-    let i = rest.findIndex((p) => !recent.includes(p.proj));
-    if (i < 0) i = 0; // no hay alternativa: se acepta la repetición
-    out.push(rest.splice(i, 1)[0]);
+    const recent = new Set(out.slice(-window).map((p) => p.proj));
+    const ok = (p: Photo) => !recent.has(p.proj);
+    // entre las próximas del orden estético, la que no repite sesión; si empatan, la sesión con más fotos pendientes
+    let best = -1, bestLeft = -1;
+    for (let i = 0; i < Math.min(lookahead, rest.length); i++) {
+      if (!ok(rest[i])) continue;
+      const l = left.get(rest[i].proj || '') || 0;
+      if (l > bestLeft) { best = i; bestLeft = l; }
+    }
+    if (best < 0) best = rest.findIndex(ok);
+    if (best < 0) best = 0; // no hay alternativa: se acepta la repetición
+    const p = rest.splice(best, 1)[0];
+    left.set(p.proj || '', (left.get(p.proj || '') || 0) - 1);
+    out.push(p);
   }
   return out;
 }
