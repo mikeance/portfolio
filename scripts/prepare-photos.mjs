@@ -38,7 +38,8 @@ function* walk(dir) {
 
 function classify(file) {
   const [a, b] = relative(SRC, file).split('/');
-  if (CATS.includes(a)) return { cat: a === 'portada' ? 'home' : a, proj: a === 'portada' ? undefined : b };
+  if (a === 'portada') { const m = (b || '').match(/^\d+_(.+?)__/); return { cat: 'home', proj: m ? m[1].replace(/_/g, ' ') : undefined }; }
+  if (CATS.includes(a)) return { cat: a, proj: b };
   return null;
 }
 
