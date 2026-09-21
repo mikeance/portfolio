@@ -13,7 +13,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "catalogo": "node scripts/catalog.mjs"
+    "catalogo": "node scripts/catalog.mjs",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "astro": "^7.3.3"

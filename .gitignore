@@ -31,3 +31,6 @@ catalogo/
 
 # logo original de trabajo
 WEB WIP.svg
+
+# wrangler
+.wrangler/
