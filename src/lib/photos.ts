@@ -80,8 +80,25 @@ export function sortFaces(list: Photo[]): Photo[] {
   return [...out, ...bw.slice(bi)];
 }
 
-/** Portada automática: lo mejor de cada categoría (unas 240 fotos) mezclado con la estética de Life. */
-export function homeMix(all: Photo[], total = 240): Photo[] {
+/** Evita que dos fotos de la misma sesión (mismo sujeto/lugar) queden a menos de `window` posiciones. */
+export function spreadSessions(list: Photo[], window = 6): Photo[] {
+  const out: Photo[] = [];
+  const rest = list.slice();
+  while (rest.length) {
+    const recent = out.slice(-window).map((p) => p.proj);
+    let i = rest.findIndex((p) => !recent.includes(p.proj));
+    if (i < 0) i = 0; // no hay alternativa: se acepta la repetición
+    out.push(rest.splice(i, 1)[0]);
+  }
+  return out;
+}
+
+/** Portada automática: lo mejor de cada categoría (~240 fotos), elegido con azar (semilla fija) y con tope
+ *  por sesión para que no salgan fotos consecutivas del mismo rollo; orden con la estética de Life y
+ *  sesiones repartidas a lo largo del scroll. */
+export function homeMix(all: Photo[], total = 240, seed = 7): Photo[] {
+  let t = seed + 0x6d2b79f5;
+  const rnd = () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
   const light = (p: Photo) => Math.min(p.lum, 0.8) - (p.lum < 0.28 ? 0.4 : 0);
   const quality: Record<string, (p: Photo) => number> = {
     faces: (p) => 0.6 * (Math.min(p.face ?? 0, 0.25) / 0.25) + 0.4 * light(p),
@@ -93,9 +110,24 @@ export function homeMix(all: Photo[], total = 240): Photo[] {
   const seen = new Set<string>();
   const picked: Photo[] = [];
   for (const c of cats) {
-    const list = all.filter((p) => p.cat === c).sort((a, b) => quality[c](b) - quality[c](a));
+    const ranked = all.filter((p) => p.cat === c).sort((a, b) => quality[c](b) - quality[c](a));
+    // candidatas: el 70% mejor, barajadas
+    const pool = ranked.slice(0, Math.max(per, Math.ceil(ranked.length * 0.7)));
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const perSession = new Map<string, number>();
     let n = 0;
-    for (const p of list) { if (n >= per) break; if (p.sha && seen.has(p.sha)) continue; if (p.sha) seen.add(p.sha); picked.push(p); n++; }
+    for (const cap of [4, 8, 99]) {
+      for (const p of pool) {
+        if (n >= per) break;
+        if (picked.includes(p) || (p.sha && seen.has(p.sha))) continue;
+        const k = p.proj || '';
+        if ((perSession.get(k) || 0) >= cap) continue;
+        perSession.set(k, (perSession.get(k) || 0) + 1);
+        if (p.sha) seen.add(p.sha);
+        picked.push(p); n++;
+      }
+      if (n >= per) break;
+    }
   }
-  return sortLife(picked);
+  return spreadSessions(sortLife(picked));
 }
