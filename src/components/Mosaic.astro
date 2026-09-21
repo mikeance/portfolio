@@ -8,7 +8,7 @@ const items = order === 'manual' ? photos : sortByColor(photos);
 <main>
   <div class="grid">
     {items.map((p) => (
-      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id}>
+      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio}>
         <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
       </figure>
     ))}
@@ -21,16 +21,11 @@ const items = order === 'manual' ? photos : sortByColor(photos);
 
 <style>
   main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
-  /* Mosaico compacto: cada foto conserva su proporción; una horizontal ocupa dos columnas.
-     La altura de cada pieza se traduce en filas de 2px (JS) y el flujo "dense" rellena los huecos. */
-  .grid { --cols: 4; --gap: 10px; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-auto-rows: 2px; column-gap: var(--gap); row-gap: 0; grid-auto-flow: dense; }
-  figure { margin: 0; padding-bottom: var(--gap); cursor: zoom-in; }
-  figure.wide { grid-column: span 2; }
+  /* Mosaico compacto (JS): cada foto conserva su proporción, las horizontales ocupan dos columnas y no quedan huecos. */
+  .grid { position: relative; }
+  figure { position: absolute; margin: 0; cursor: zoom-in; }
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
-  @media (min-width: 1500px) { .grid { --cols: 5; } }
-  @media (max-width: 899px) { .grid { --cols: 3; } }
-  @media (max-width: 559px) { .grid { --cols: 2; } }
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
   #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; }
@@ -42,16 +37,53 @@ const items = order === 'manual' ? photos : sortByColor(photos);
   const lb = document.getElementById('lightbox')!;
   const lbImg = lb.querySelector('img')!;
   const figs = [...grid.querySelectorAll('figure')] as HTMLElement[];
+  const GAP = 10, PAD = 12; // hueco entre fotos y marco (6px por lado)
+  const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
 
-  // Cada figura ocupa tantas filas de 2px como mide su imagen (más el hueco inferior).
+  // Cada foto va a la columna más corta. Una horizontal ocupa dos columnas: se coloca cuando dos columnas
+  // vecinas están casi a la misma altura y la diferencia se reparte entre los huecos de la más corta.
   function layout() {
-    for (const f of figs) {
-      const h = (f.querySelector('img') as HTMLImageElement).getBoundingClientRect().height + 10;
-      f.style.gridRowEnd = `span ${Math.max(1, Math.ceil(h / 2))}`;
+    const cols = colCount();
+    const col = (grid.clientWidth - (cols - 1) * GAP) / cols;
+    const h = new Array(cols).fill(0);
+    const stacks: { el: HTMLElement; top: number }[][] = Array.from({ length: cols }, () => []);
+    const hgt = (el: HTMLElement, w: number) => (w - PAD) / +el.dataset.r! + PAD;
+    const queue = figs.slice();
+    const placeV = (el: HTMLElement, c: number) => {
+      el.style.cssText = `left:${c * (col + GAP)}px;top:${h[c]}px;width:${col}px`;
+      stacks[c].push({ el, top: h[c] });
+      h[c] += hgt(el, col) + GAP;
+    };
+    const placeW = (el: HTMLElement, c: number) => {
+      const short = h[c] <= h[c + 1] ? c : c + 1, d = Math.abs(h[c] - h[c + 1]), y = Math.max(h[c], h[c + 1]);
+      const st = stacks[short];
+      if (d > 0 && st.length) { const extra = d / st.length; st.forEach((s, i) => { s.top += extra * (i + 1); s.el.style.top = `${s.top}px`; }); }
+      const w = 2 * col + GAP;
+      el.style.cssText = `left:${c * (col + GAP)}px;top:${y}px;width:${w}px`;
+      h[c] = h[c + 1] = y + hgt(el, w) + GAP;
+      stacks[c] = []; stacks[c + 1] = [];
+    };
+    const bestPair = (c: number) => {
+      let best = -1, bd = Infinity;
+      for (const i of [c - 1, c]) if (i >= 0 && i + 1 < cols) { const d = Math.abs(h[i] - h[i + 1]); if (d < bd) { bd = d; best = i; } }
+      return { i: best, d: bd };
+    };
+    while (queue.length) {
+      const c = h.indexOf(Math.min(...h));
+      const wi = queue.findIndex((el) => el.classList.contains('wide'));
+      const vi = queue.findIndex((el) => !el.classList.contains('wide'));
+      if (wi >= 0 && (vi < 0 || wi === 0)) {
+        const { i, d } = bestPair(c);
+        const short = h[i] <= h[i + 1] ? i : i + 1;
+        const tolerable = d <= 14 * stacks[short].length + 1;
+        if (vi < 0 || (i >= 0 && tolerable)) { placeW(queue.splice(wi, 1)[0], i); continue; }
+      }
+      placeV(queue.splice(vi, 1)[0], c);
     }
+    grid.style.height = `${Math.max(...h) - GAP}px`;
   }
   grid.querySelectorAll('img').forEach((img) => {
-    const ok = () => { img.classList.add('ok'); layout(); };
+    const ok = () => img.classList.add('ok');
     img.complete ? ok() : img.addEventListener('load', ok);
   });
   layout();
