@@ -34,7 +34,7 @@ export function sortLife(list: Photo[]): Photo[] {
   const score = (p: Photo) => {
     const nature = p.sat >= 0.12 && p.hue >= 70 && p.hue <= 250 ? 0.35 : 0;
     const dark = p.lum < 0.28 ? -0.4 : 0;
-    return p.lum + nature + dark;
+    return Math.min(p.lum, 0.8) + nature + dark; // las muy claras (quemadas) no van las primeras
   };
   const byScore = (a: Photo, b: Photo) => {
     const ba = Math.round(score(b) * 4), aa = Math.round(score(a) * 4);
