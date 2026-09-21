@@ -1,5 +1,7 @@
 ---
 import MosaicPage from '../views/MosaicPage.astro';
 import { photos } from '../lib/photos';
+// Portada: las fotos de fotos/portada; si no hay ninguna, todas las categorías.
+const home = photos.filter((p) => p.cat === 'home');
 ---
-<MosaicPage lang="es" path="/" photos={photos} />
+<MosaicPage lang="es" path="/" photos={home.length ? home : photos.filter((p) => p.cat !== 'project')} />

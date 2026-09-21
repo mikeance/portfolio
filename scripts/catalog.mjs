@@ -18,6 +18,7 @@ const IMG = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp', '.heic',
 const load = (f, d) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : d);
 const cache = load(join(OUT, 'cache.json'), {});
 const pre = load(join(OUT, 'preseleccion.json'), {});
+const home = new Set(load(join(OUT, 'portada.json'), []));
 const hidden = new Set(load(join(OUT, 'ocultas.json'), [])); // fotos que no se muestran en el catálogo (los archivos no se tocan)
 
 // 1) recorrer todo
@@ -99,7 +100,7 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
   if (o.lum > 0.94) fl.push('clara');
   if (o.sharp < p10) fl.push('borrosa');
   if (similar.has(f.path)) fl.push('similar');
-  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '' };
+  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.has(f.path) ? 1 : 0 };
 });
 
 const summary = {

@@ -6,12 +6,12 @@ export interface Photo {
   hue: number;
   sat: number;
   lum: number;
-  cat: 'faces' | 'editorial' | 'lifestyle' | 'project';
+  cat: 'faces' | 'editorial' | 'lifestyle' | 'project' | 'home';
   project?: string;
 }
 
 export const photos = all as Photo[];
-export const categories = ['faces', 'editorial', 'lifestyle'] as const;
+export const categories = ['editorial', 'faces', 'lifestyle'] as const;
 export type Category = (typeof categories)[number];
 
 /** Neutros (b/n, grises) primero por luminosidad; después el resto por tono. */

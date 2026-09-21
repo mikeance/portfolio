@@ -11,7 +11,7 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const SRC = join(ROOT, 'fotos');
 const OUT = join(ROOT, 'public/photos');
 const DATA = join(ROOT, 'src/data/photos.json');
-const CATS = ['faces', 'editorial', 'lifestyle'];
+const CATS = ['faces', 'editorial', 'lifestyle', 'portada'];
 const EXT = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp']);
 
 // En Cloudflare no existen los originales (fotos/ no se sube): se usan las imágenes ya generadas en public/photos.
@@ -31,7 +31,7 @@ function* walk(dir) {
 
 function classify(file) {
   const [a, b] = relative(SRC, file).split('/');
-  if (CATS.includes(a)) return { cat: a };
+  if (CATS.includes(a)) return { cat: a === 'portada' ? 'home' : a };
   if (a === 'proyectos' && b && !EXT.has(extname(b).toLowerCase())) return { cat: 'project', project: b };
   return null;
 }

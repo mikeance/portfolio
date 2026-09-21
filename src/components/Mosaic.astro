@@ -3,11 +3,16 @@ import type { Photo } from '../lib/photos';
 import { sortByColor } from '../lib/photos';
 interface Props { photos: Photo[]; closeLabel: string }
 const { photos, closeLabel } = Astro.props;
-const items = sortByColor(photos).map((p) => ({ id: p.id, r: p.ratio }));
+const items = sortByColor(photos);
 ---
 <main>
-  <div id="mosaic" data-items={JSON.stringify(items)}></div>
-  <div id="sentinel" aria-hidden="true"></div>
+  <div class="grid">
+    {items.map((p) => (
+      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id}>
+        <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
+      </figure>
+    ))}
+  </div>
 </main>
 <div id="lightbox" hidden>
   <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
@@ -16,12 +21,15 @@ const items = sortByColor(photos).map((p) => ({ id: p.id, r: p.ratio }));
 
 <style>
   main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
-  #mosaic { display: flex; gap: 10px; align-items: flex-start; }
-  #mosaic :global(.col) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-  #mosaic :global(figure) { margin: 0; padding: 6px; background: var(--mat); cursor: zoom-in; }
-  #mosaic :global(img) { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.5s; }
-  #mosaic :global(img.ok) { opacity: 1; }
-  #sentinel { height: 1px; }
+  /* Rejilla: cada celda vertical es 2:3; una horizontal ocupa dos columnas (4:3) y mide lo mismo de alto. */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-flow: dense; gap: 10px; }
+  figure { margin: 0; padding: 6px; background: var(--mat); cursor: zoom-in; aspect-ratio: 2 / 3; }
+  figure.wide { grid-column: span 2; aspect-ratio: 4 / 3; }
+  figure img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.5s; }
+  figure img.ok { opacity: 1; }
+  @media (min-width: 1500px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (max-width: 899px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 559px) { .grid { grid-template-columns: repeat(2, 1fr); } }
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
   #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; }
@@ -29,58 +37,14 @@ const items = sortByColor(photos).map((p) => ({ id: p.id, r: p.ratio }));
 </style>
 
 <script>
-  const root = document.getElementById('mosaic')!;
-  const items: { id: string; r: number }[] = JSON.parse(root.dataset.items || '[]');
-  const sentinel = document.getElementById('sentinel')!;
+  const grid = document.querySelector('.grid')!;
   const lb = document.getElementById('lightbox')!;
   const lbImg = lb.querySelector('img')!;
-  const BATCH = 20;
-  let cols: HTMLElement[] = [];
-  let next = 0;
-
-  const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
-
-  function build() {
-    root.innerHTML = '';
-    cols = Array.from({ length: colCount() }, () => {
-      const c = document.createElement('div');
-      c.className = 'col';
-      root.appendChild(c);
-      return c;
-    });
-    next = 0;
-    count = 0;
-    fill();
-  }
-
-  // Cada foto va a la columna más corta; con el orden por color, cada "fila" reúne tonos vecinos.
-  const heights = () => cols.map((c) => c.offsetHeight);
-  function add(it: { id: string; r: number }, i: number) {
-    const h = heights();
-    const target = i < cols.length ? i : h.indexOf(Math.min(...h));
-    const fig = document.createElement('figure');
-    const img = document.createElement('img');
-    img.src = `/photos/${it.id}-800.webp`;
-    img.alt = '';
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.width = 800;
-    img.height = Math.round(800 / it.r);
-    img.addEventListener('load', () => img.classList.add('ok'));
-    fig.dataset.id = it.id;
-    fig.appendChild(img);
-    cols[target].appendChild(fig);
-  }
-
-  let count = 0;
-  const nearEnd = () => next < items.length && sentinel.getBoundingClientRect().top < innerHeight + 1200;
-  // Cada foto se muestra una sola vez: se carga por lotes mientras se baja y, al llegar a la última, no hay más scroll.
-  function fill() {
-    while (nearEnd()) for (let k = 0; k < BATCH && next < items.length; k++) add(items[next++], count++);
-  }
-  addEventListener('scroll', fill, { passive: true });
-
-  root.addEventListener('click', (e) => {
+  grid.querySelectorAll('img').forEach((img) => {
+    const ok = () => img.classList.add('ok');
+    img.complete ? ok() : img.addEventListener('load', ok);
+  });
+  grid.addEventListener('click', (e) => {
     const fig = (e.target as HTMLElement).closest('figure');
     if (!fig) return;
     lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
@@ -89,8 +53,4 @@ const items = sortByColor(photos).map((p) => ({ id: p.id, r: p.ratio }));
   const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
   lb.addEventListener('click', closeLb);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
-
-  let cc = colCount();
-  addEventListener('resize', () => { if (colCount() !== cc) { cc = colCount(); build(); } });
-  build();
 </script>
