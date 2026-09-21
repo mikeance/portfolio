@@ -22,8 +22,9 @@ const t = useTranslations(lang);
   </main>
 </Base>
 <style>
-  .works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem 1.5rem; }
-  @media (max-width: 899px) { .works { grid-template-columns: repeat(2, 1fr); } }
+  .works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem 1.25rem; }
+  @media (max-width: 1099px) { .works { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 799px) { .works { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 559px) { .works { grid-template-columns: 1fr; } }
   /* Bloque de cada trabajo: cuadrícula de 4 fotos (recortadas al cuadrado) y nombre */
   .four { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: var(--mat); }
