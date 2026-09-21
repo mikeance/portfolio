@@ -1,5 +1,6 @@
 ---
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { localePath, useTranslations, type Lang } from '../i18n/ui';
 import { categories, projects } from '../lib/photos';
 import { site } from '../data/site';
@@ -7,7 +8,7 @@ interface Props { lang: Lang; current: string }
 const { lang, current } = Astro.props;
 const t = useTranslations(lang);
 const other: Lang = lang === 'es' ? 'en' : 'es';
-const hasLogo = existsSync(new URL('../../public/logo.svg', import.meta.url));
+const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
 ---
 <header>
   <a class="brand" href={localePath(lang, '/')} aria-label={site.name}>
