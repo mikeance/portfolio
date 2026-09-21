@@ -20,16 +20,16 @@ const items = sortByColor(photos);
 </div>
 
 <style>
-  main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
-  /* Rejilla: cada celda vertical es 2:3; una horizontal ocupa dos columnas (4:3) y mide lo mismo de alto. */
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-flow: dense; gap: 10px; }
-  figure { margin: 0; padding: 6px; background: var(--mat); cursor: zoom-in; aspect-ratio: 2 / 3; }
-  figure.wide { grid-column: span 2; aspect-ratio: 4 / 3; }
+  main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; container-type: inline-size; }
+  /* Rejilla: celdas verticales 2:3 con altura fija por fila; una horizontal ocupa dos columnas y la misma altura. */
+  .grid { --cols: 4; --gap: 10px; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-auto-rows: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols) * 1.5); grid-auto-flow: dense; gap: var(--gap); }
+  figure { margin: 0; padding: 6px; background: var(--mat); cursor: zoom-in; min-height: 0; }
+  figure.wide { grid-column: span 2; }
   figure img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
-  @media (min-width: 1500px) { .grid { grid-template-columns: repeat(5, 1fr); } }
-  @media (max-width: 899px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 559px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1500px) { .grid { --cols: 5; } }
+  @media (max-width: 899px) { .grid { --cols: 3; } }
+  @media (max-width: 559px) { .grid { --cols: 2; } }
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
   #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; }
