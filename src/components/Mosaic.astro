@@ -1,9 +1,9 @@
 ---
 import type { Photo } from '../lib/photos';
 import { sortByColor } from '../lib/photos';
-interface Props { photos: Photo[]; closeLabel: string }
-const { photos, closeLabel } = Astro.props;
-const items = sortByColor(photos);
+interface Props { photos: Photo[]; closeLabel: string; order?: 'color' | 'manual' }
+const { photos, closeLabel, order = 'color' } = Astro.props;
+const items = order === 'manual' ? photos : sortByColor(photos);
 ---
 <main>
   <div class="grid">

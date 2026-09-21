@@ -3,10 +3,10 @@ import Base from '../layouts/Base.astro';
 import Mosaic from '../components/Mosaic.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
 import type { Photo } from '../lib/photos';
-interface Props { lang: Lang; path: string; title?: string; photos: Photo[] }
-const { lang, path, title, photos } = Astro.props;
+interface Props { lang: Lang; path: string; title?: string; photos: Photo[]; order?: 'color' | 'manual' }
+const { lang, path, title, photos, order } = Astro.props;
 const t = useTranslations(lang);
 ---
 <Base lang={lang} path={path} title={title}>
-  <Mosaic photos={photos} closeLabel={t('lightbox.close')} />
+  <Mosaic photos={photos} order={order} closeLabel={t('lightbox.close')} />
 </Base>
