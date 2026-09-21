@@ -4,7 +4,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const wrongHost = url.hostname !== MAIN && !url.hostname.endsWith('.workers.dev');
-    if (wrongHost || url.protocol === 'http:') {
+    const scheme = (request.headers.get('cf-visitor') || '').includes('"http"') ? 'http' : url.protocol.replace(':', '');
+    if (wrongHost || scheme === 'http') {
       if (wrongHost) url.hostname = MAIN;
       url.protocol = 'https:';
       return Response.redirect(url.toString(), 301);

@@ -3,7 +3,7 @@
   "name": "portfolio",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-18",
-  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "404-page" },
+  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": true },
   "routes": [
     { "pattern": "mikeance.com", "custom_domain": true },
     { "pattern": "www.mikeance.com", "custom_domain": true },
