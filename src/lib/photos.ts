@@ -131,3 +131,10 @@ export function homeMix(all: Photo[], total = 240, seed = 7): Photo[] {
   }
   return spreadSessions(sortLife(picked));
 }
+
+/** Desordena un poco: cada foto se mueve hasta `amount` posiciones (azar con semilla fija). */
+export function jitter(list: Photo[], amount = 10, seed = 3): Photo[] {
+  let t = seed + 0x6d2b79f5;
+  const rnd = () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+  return list.map((p, i) => ({ p, k: i + (rnd() - 0.5) * 2 * amount })).sort((a, b) => a.k - b.k).map((x) => x.p);
+}
