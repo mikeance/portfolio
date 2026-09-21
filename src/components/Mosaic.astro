@@ -35,7 +35,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
     const stacks: { el: HTMLElement; top: number }[][] = Array.from({ length: cols }, () => []);
     const hgt = (el: HTMLElement, w: number) => (w - PAD) / +el.dataset.r! + PAD;
     const queue = figs.slice();
-    const wides: { top: number; bottom: number }[] = []; // horizontales ya colocadas (franja vertical)
+    const wides: { top: number; bottom: number; col: number }[] = []; // horizontales ya colocadas (franja vertical)
     const placeV = (el: HTMLElement, c: number) => {
       el.style.cssText = `left:${c * (col + GAP)}px;top:${h[c]}px;width:${col}px`;
       stacks[c].push({ el, top: h[c] });
@@ -47,7 +47,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
       if (d > 0 && st.length) { const extra = d / st.length; st.forEach((s, i) => { s.top += extra * (i + 1); s.el.style.top = `${s.top}px`; }); }
       const w = 2 * col + GAP;
       el.style.cssText = `left:${c * (col + GAP)}px;top:${y}px;width:${w}px`;
-      wides.push({ top: y, bottom: y + hgt(el, w) });
+      wides.push({ top: y, bottom: y + hgt(el, w), col: c });
       h[c] = h[c + 1] = y + hgt(el, w) + GAP;
       stacks[c] = []; stacks[c + 1] = [];
     };
@@ -66,7 +66,9 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
         const tolerable = d <= 14 * stacks[short].length + 1;
         const y = Math.max(h[i], h[i + 1]), hh = hgt(queue[wi], 2 * col + GAP);
         const alone = !wides.some((o) => y < o.bottom && y + hh > o.top); // ninguna otra horizontal a la misma altura
-        if (vi < 0 || (i >= 0 && tolerable && alone)) { placeW(queue.splice(wi, 1)[0], i); continue; }
+        if (i >= 0 && tolerable && alone) { placeW(queue.splice(wi, 1)[0], i); continue; }
+        // solo quedan horizontales: se apilan bajo la última para no compartir franja
+        if (vi < 0) { placeW(queue.splice(wi, 1)[0], alone && i >= 0 ? i : (wides.at(-1)?.col ?? 0)); continue; }
       }
       placeV(queue.splice(vi, 1)[0], c);
     }
