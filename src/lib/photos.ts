@@ -8,6 +8,7 @@ export interface Photo {
   lum: number;
   cat: 'faces' | 'editorial' | 'lifestyle' | 'project' | 'home';
   project?: string;
+  title?: string;
 }
 
 export const photos = all as Photo[];

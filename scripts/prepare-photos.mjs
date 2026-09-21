@@ -18,6 +18,8 @@ const EXT = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp']);
 if (!existsSync(SRC)) { console.log('ℹ sin carpeta fotos/: se mantienen las imágenes ya generadas'); process.exit(0); }
 mkdirSync(OUT, { recursive: true });
 mkdirSync(join(ROOT, 'src/data'), { recursive: true });
+// Títulos: fotos/titulos.json  { "faces/Proyecto/archivo.jpg": "Nombre · Lugar · 2024" }
+const titles = existsSync(join(SRC, 'titulos.json')) ? JSON.parse(readFileSync(join(SRC, 'titulos.json'), 'utf8')) : {};
 
 function* walk(dir) {
   if (!existsSync(dir)) return;
@@ -72,7 +74,8 @@ for (const file of walk(SRC)) {
   const n = data.length / 3;
   const { h: hue, s, l } = rgbToHsl(r / n, g / n, b / n);
   const ratio = +(w / h).toFixed(4);
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta });
+  const title = titles[relative(SRC, file)] || '';
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, ...(title ? { title } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

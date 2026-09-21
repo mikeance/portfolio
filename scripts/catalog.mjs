@@ -13,11 +13,13 @@ const FOTO = process.env.FOTO_DIR || join(homedir(), 'Desktop/FOTO');
 const OUT = join(ROOT, 'catalogo');
 const THUMBS = join(OUT, 'thumbs');
 mkdirSync(THUMBS, { recursive: true });
+const MED = join(OUT, 'med'); mkdirSync(MED, { recursive: true });
 
 const IMG = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp', '.heic', '.heif']);
 const load = (f, d) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : d);
 const cache = load(join(OUT, 'cache.json'), {});
 const pre = load(join(OUT, 'preseleccion.json'), {});
+const titles = load(join(OUT, 'titulos.json'), {});
 const homeList = load(join(OUT, 'portada.json'), []); const home = new Map(homeList.map((p, i) => [p, i + 1]));
 const hidden = new Set(load(join(OUT, 'ocultas.json'), [])); // fotos que no se muestran en el catálogo (los archivos no se tocan)
 
@@ -79,6 +81,12 @@ await Promise.all(Array.from({ length: 6 }, async () => {
 for (const f of images) if (cache[f.path]) cache[f.path].size = f.size;
 writeFileSync(join(OUT, 'cache.json'), JSON.stringify(cache));
 
+// 2b) miniaturas medianas (720px) solo para las marcadas: las usa el editor de portada
+const marked = images.filter((f) => pre[f.path] && pre[f.path] !== 'X' && cache[f.path] && !cache[f.path].error && !existsSync(join(MED, cache[f.path].id + '.jpg')));
+let mi = 0;
+await Promise.all(Array.from({ length: 6 }, async () => { while (mi < marked.length) { const f = marked[mi++]; try { await sharp(join(FOTO, f.path), { failOn: 'none', limitInputPixels: false }).rotate().resize(720, 720, { fit: 'inside' }).jpeg({ quality: 78 }).toFile(join(MED, cache[f.path].id + '.jpg')); } catch {} } }));
+if (marked.length) console.log(`miniaturas medianas nuevas: ${marked.length}`);
+
 // 3) marcas: baja resolución, oscura, clara, borrosa, casi-duplicada (dentro de la misma carpeta)
 const ok = images.map((f) => cache[f.path]).filter((o) => o && !o.error);
 const sh = ok.map((o) => o.sharp).sort((a, b) => a - b);
@@ -100,7 +108,7 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
   if (o.lum > 0.94) fl.push('clara');
   if (o.sharp < p10) fl.push('borrosa');
   if (similar.has(f.path)) fl.push('similar');
-  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0 };
+  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0, t: titles[f.path] || '', md: existsSync(join(MED, o.id + '.jpg')) ? 1 : 0 };
 });
 
 const summary = {

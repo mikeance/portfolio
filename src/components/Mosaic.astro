@@ -8,8 +8,8 @@ const items = order === 'manual' ? photos : sortByColor(photos);
 <main>
   <div class="grid">
     {items.map((p) => (
-      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio}>
-        <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
+      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio} data-title={p.title}>
+        <img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} title={p.title} loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
       </figure>
     ))}
   </div>
@@ -17,6 +17,7 @@ const items = order === 'manual' ? photos : sortByColor(photos);
 <div id="lightbox" hidden>
   <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
   <img alt="" />
+  <p id="lb-title"></p>
 </div>
 
 <style>
@@ -28,7 +29,8 @@ const items = order === 'manual' ? photos : sortByColor(photos);
   figure img.ok { opacity: 1; }
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
-  #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; }
+  #lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; }
+  #lb-title { position: absolute; bottom: 0.9rem; left: 0; right: 0; margin: 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); }
   #lb-close { all: unset; position: absolute; top: 1rem; right: 1.5rem; font-size: 2.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
 </style>
 
@@ -93,6 +95,8 @@ const items = order === 'manual' ? photos : sortByColor(photos);
     const fig = (e.target as HTMLElement).closest('figure');
     if (!fig) return;
     lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
+    lbImg.alt = fig.dataset.title || '';
+    document.getElementById('lb-title')!.textContent = fig.dataset.title || '';
     lb.hidden = false;
   });
   const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
