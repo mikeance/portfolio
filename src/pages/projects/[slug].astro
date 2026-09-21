@@ -1,8 +1,0 @@
----
-import MosaicPage from '../../views/MosaicPage.astro';
-import { photos, projects } from '../../lib/photos';
-export function getStaticPaths() { return projects.map((p) => ({ params: { slug: p.slug }, props: { name: p.name } })); }
-const { slug } = Astro.params;
-const { name } = Astro.props;
----
-<MosaicPage lang="es" path={`/projects/${slug}`} title={name.replace(/^\d{4}-\d{2}\s*/, '')} photos={photos.filter((p) => p.project === name)} />

@@ -1,50 +1,34 @@
 ---
 import type { Photo } from '../lib/photos';
 import { sortByColor } from '../lib/photos';
-interface Props { photos: Photo[]; closeLabel: string; order?: 'color' | 'manual' }
-const { photos, closeLabel, order = 'color' } = Astro.props;
+interface Props { photos: Photo[]; order?: 'color' | 'manual' }
+const { photos, order = 'color' } = Astro.props;
 const items = order === 'manual' ? photos : sortByColor(photos);
 ---
-<main>
-  <div class="grid">
-    {items.map((p) => (
-      <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio} data-title={p.title}>
-        <img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} title={p.title} loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
-      </figure>
-    ))}
-  </div>
-</main>
-<div id="lightbox" hidden>
-  <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
-  <img alt="" />
-  <p id="lb-title"></p>
+<div class="grid">
+  {items.map((p) => (
+    <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio} data-title={p.title}>
+      <img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} title={p.title} loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
+    </figure>
+  ))}
 </div>
 
 <style>
-  main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
   /* Mosaico compacto (JS): cada foto conserva su proporción, las horizontales ocupan dos columnas y no quedan huecos. */
   .grid { position: relative; }
   figure { position: absolute; margin: 0; cursor: zoom-in; }
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
-  #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
-  #lightbox[hidden] { display: none; }
-  #lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; }
-  #lb-title { position: absolute; bottom: 0.9rem; left: 0; right: 0; margin: 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); }
-  #lb-close { all: unset; position: absolute; top: 1rem; right: 1.5rem; font-size: 2.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
 </style>
 
 <script>
-  const grid = document.querySelector('.grid') as HTMLElement;
-  const lb = document.getElementById('lightbox')!;
-  const lbImg = lb.querySelector('img')!;
-  const figs = [...grid.querySelectorAll('figure')] as HTMLElement[];
   const GAP = 10, PAD = 12; // hueco entre fotos y marco (6px por lado)
   const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
 
   // Cada foto va a la columna más corta. Una horizontal ocupa dos columnas: se coloca cuando dos columnas
   // vecinas están casi a la misma altura y la diferencia se reparte entre los huecos de la más corta.
-  function layout() {
+  function layout(grid: HTMLElement) {
+    const figs = [...grid.querySelectorAll('figure')] as HTMLElement[];
     const cols = colCount();
     const col = (grid.clientWidth - (cols - 1) * GAP) / cols;
     const h = new Array(cols).fill(0);
@@ -82,24 +66,33 @@ const items = order === 'manual' ? photos : sortByColor(photos);
       }
       placeV(queue.splice(vi, 1)[0], c);
     }
-    grid.style.height = `${Math.max(...h) - GAP}px`;
+    grid.style.height = `${Math.max(0, Math.max(...h) - GAP)}px`;
   }
-  grid.querySelectorAll('img').forEach((img) => {
+
+  const grids = [...document.querySelectorAll<HTMLElement>('.grid')];
+  const layoutAll = () => grids.forEach(layout);
+  document.querySelectorAll<HTMLImageElement>('.grid img').forEach((img) => {
     const ok = () => img.classList.add('ok');
     img.complete ? ok() : img.addEventListener('load', ok);
   });
-  layout();
-  addEventListener('resize', layout);
+  layoutAll();
+  addEventListener('resize', layoutAll);
 
-  grid.addEventListener('click', (e) => {
-    const fig = (e.target as HTMLElement).closest('figure');
-    if (!fig) return;
-    lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
-    lbImg.alt = fig.dataset.title || '';
-    document.getElementById('lb-title')!.textContent = fig.dataset.title || '';
-    lb.hidden = false;
-  });
-  const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
-  lb.addEventListener('click', closeLb);
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+  // Visor (uno por página, ver Lightbox.astro)
+  const lb = document.getElementById('lightbox');
+  if (lb) {
+    const lbImg = lb.querySelector('img')!;
+    const lbTitle = lb.querySelector('p')!;
+    document.addEventListener('click', (e) => {
+      const fig = (e.target as HTMLElement).closest('.grid figure') as HTMLElement | null;
+      if (!fig) return;
+      lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
+      lbImg.alt = fig.dataset.title || '';
+      lbTitle.textContent = fig.dataset.title || '';
+      lb.hidden = false;
+    });
+    const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
+    lb.addEventListener('click', closeLb);
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+  }
 </script>

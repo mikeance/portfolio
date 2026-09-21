@@ -1,0 +1,16 @@
+---
+interface Props { closeLabel: string }
+const { closeLabel } = Astro.props;
+---
+<div id="lightbox" hidden>
+  <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
+  <img alt="" />
+  <p></p>
+</div>
+<style>
+  #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
+  #lightbox[hidden] { display: none; }
+  #lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; }
+  #lightbox p { position: absolute; bottom: 0.9rem; left: 0; right: 0; margin: 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); }
+  #lb-close { all: unset; position: absolute; top: 1rem; right: 1.5rem; font-size: 2.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
+</style>

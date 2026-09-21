@@ -27,13 +27,15 @@ for k, v in d['seleccion'].items():
         sel[p] = sel.get(p, '') + k
 titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
-print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles))
+works = {p: w for p, w in d.get('works', {}).items() if p in sel}
+print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
 pre = dict(sel)
 pre.update({p: 'X' for p in d['descartadas']})
 json.dump(pre, open(os.path.join(CAT, 'preseleccion.json'), 'w'), ensure_ascii=False)
 json.dump(portada, open(os.path.join(CAT, 'portada.json'), 'w'), ensure_ascii=False)
 json.dump(titles, open(os.path.join(CAT, 'titulos.json'), 'w'), ensure_ascii=False)
+json.dump(works, open(os.path.join(CAT, 'works.json'), 'w'), ensure_ascii=False)
 
 if '--no-ocultar' not in sys.argv:
     cat = json.load(open(os.path.join(CAT, 'catalogo.json')))['photos']
@@ -63,7 +65,7 @@ def dest_for(p, c, prefix=''):
         return os.path.join(W, 'fotos', c, prefix + re.sub(r'\s+', '_', proj + '__' + rest))
     return os.path.join(W, 'fotos', c, proj, prefix + re.sub(r'\s+', '_', rest))
 
-n, seen, web_titles = 0, set(), {}
+n, seen, web_titles, web_works = 0, set(), {}, {}
 for p, ks in sel.items():
     src = os.path.join(FOTO, p)
     if not os.path.exists(src):
@@ -73,7 +75,9 @@ for p, ks in sel.items():
         if dest in seen: continue
         seen.add(dest); os.makedirs(os.path.dirname(dest), exist_ok=True)
         if subprocess.run(['cp', '-pc', src, dest]).returncode == 0: n += 1
-        if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
+        rel = os.path.relpath(dest, os.path.join(W, 'fotos'))
+        if p in titles: web_titles[rel] = titles[p]
+        if p in works: web_works[rel] = works[p]
 for i, p in enumerate(portada, 1):
     src = os.path.join(FOTO, p)
     if os.path.exists(src):
@@ -81,6 +85,7 @@ for i, p in enumerate(portada, 1):
         subprocess.run(['cp', '-pc', src, dest])
         if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
 json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
+json.dump(web_works, open(os.path.join(W, 'fotos', 'works.json'), 'w'), ensure_ascii=False, indent=1)
 print('web:', n, 'copias · portada:', len(portada), '· títulos:', len(web_titles))
 for c in NAME.values():
     b = os.path.join(W, 'fotos', c)

@@ -6,9 +6,12 @@ export interface Photo {
   hue: number;
   sat: number;
   lum: number;
-  cat: 'faces' | 'editorial' | 'lifestyle' | 'project' | 'home';
-  project?: string;
+  cat: 'faces' | 'editorial' | 'lifestyle' | 'home';
+  proj?: string;  // carpeta de sesión/proyecto dentro de fotos/<categoría>/
+  src?: string;   // ruta relativa dentro de fotos/
+  sha?: string;   // huella del contenido (para no repetir la misma foto)
   title?: string;
+  works?: string[];
 }
 
 export const photos = all as Photo[];
@@ -24,7 +27,3 @@ export function sortByColor(list: Photo[]): Photo[] {
 
 export const slugify = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-export const projects = [...new Set(photos.filter((p) => p.cat === 'project').map((p) => p.project!))]
-  .sort()
-  .map((name) => ({ name, slug: slugify(name) }));

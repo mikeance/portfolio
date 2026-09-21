@@ -14,3 +14,5 @@ body {
   line-height: 1.5; -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; text-decoration: none; }
+
+.wrap { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }

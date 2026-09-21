@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import { localePath, useTranslations, type Lang } from '../i18n/ui';
+import { works } from '../lib/works';
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+---
+<Base lang={lang} path="/works" title={t('nav.works')}>
+  <main class="wrap">
+    <ul class="works">
+      {works.map((w) => (
+        <li>
+          <a href={localePath(lang, `/works/${w.slug}`)}>
+            <div class="four">
+              {w.cover.map((p) => <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" />)}
+            </div>
+            <h2>{w.name}</h2>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Base>
+<style>
+  .works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem 1.5rem; }
+  @media (max-width: 899px) { .works { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 559px) { .works { grid-template-columns: 1fr; } }
+  /* Bloque de cada trabajo: cuadrícula de 4 fotos (recortadas al cuadrado) y nombre */
+  .four { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: var(--mat); }
+  .four img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+  h2 { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin: 0.8rem 0 0; color: var(--fg); }
+  li a:hover h2 { color: var(--muted); }
+</style>

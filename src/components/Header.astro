@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { localePath, useTranslations, type Lang } from '../i18n/ui';
-import { categories, projects } from '../lib/photos';
+import { categories } from '../lib/photos';
 import { site } from '../data/site';
 interface Props { lang: Lang; current: string }
 const { lang, current } = Astro.props;
@@ -18,15 +18,7 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
     {categories.map((c) => (
       <a class="top" href={localePath(lang, `/photography/${c}`)} aria-current={current === `/photography/${c}` ? 'page' : undefined}>{t(`cat.${c}`)}</a>
     ))}
-    <div class="dd">
-      <button type="button" aria-haspopup="true">{t('nav.projects')}</button>
-      <ul>
-        {projects.length === 0 && <li class="soon">{t('nav.soon')}</li>}
-        {projects.map((p) => (
-          <li><a href={localePath(lang, `/projects/${p.slug}`)} aria-current={current === `/projects/${p.slug}` ? 'page' : undefined}>{p.name.replace(/^\d{4}-\d{2}\s*/, '')}</a></li>
-        ))}
-      </ul>
-    </div>
+    <a class="top" href={localePath(lang, '/works')} aria-current={current.startsWith('/works') ? 'page' : undefined}>{t('nav.works')}</a>
     <div class="dd">
       <button type="button" aria-haspopup="true">{t('nav.contact')}</button>
       <ul>

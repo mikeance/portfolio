@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import Mosaic from '../components/Mosaic.astro';
+import Lightbox from '../components/Lightbox.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import type { Work } from '../lib/works';
+const { lang, work } = Astro.props as { lang: Lang; work: Work };
+const t = useTranslations(lang);
+---
+<Base lang={lang} path={`/works/${work.slug}`} title={work.name}>
+  <main class="wrap">
+    <h1>{work.name}</h1>
+    {work.sessions.map((s) => (
+      <section>
+        <h2>{s.label}{s.year && <span> · {s.year}</span>}</h2>
+        <Mosaic photos={s.photos} />
+      </section>
+    ))}
+  </main>
+  <Lightbox closeLabel={t('lightbox.close')} />
+</Base>
+<style>
+  h1 { font-size: 1rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; margin: 0.5rem 0 2rem; }
+  section + section { margin-top: 2.5rem; }
+  h2 { font-size: 0.75rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.9rem; }
+  h2 span { color: var(--line); color: #bbb; }
+</style>

@@ -1,6 +1,7 @@
 // Optimiza las fotos de /fotos y genera src/data/photos.json
 //   fotos/portrait | editorial | lifestyle      -> Fotografía
-//   fotos/proyectos/<nombre-del-proyecto>/      -> Proyectos
+//   fotos/portada                                -> Portada (orden manual)
+//   fotos/works.json  { "faces/Sesión/foto.jpg": ["scrapworld"] }  -> asignación manual a Works (si no, reglas de src/data/works.json)
 // Uso: npm run photos   (se ejecuta solo antes de dev y build)
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
@@ -12,6 +13,10 @@ const SRC = join(ROOT, 'fotos');
 const OUT = join(ROOT, 'public/photos');
 const DATA = join(ROOT, 'src/data/photos.json');
 const CATS = ['faces', 'editorial', 'lifestyle', 'portada'];
+const WORKS = JSON.parse(readFileSync(join(ROOT, 'src/data/works.json'), 'utf8'));
+const manualWorks = existsSync(join(SRC, 'works.json')) ? JSON.parse(readFileSync(join(SRC, 'works.json'), 'utf8')) : {};
+const rx = (list) => (list || []).map((r) => new RegExp(r, 'i'));
+const worksFor = (rel) => manualWorks[rel] ?? WORKS.filter((w) => rx(w.match).some((r) => r.test(rel)) && !rx(w.exclude).some((r) => r.test(rel))).map((w) => w.slug);
 const EXT = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp']);
 
 // En Cloudflare no existen los originales (fotos/ no se sube): se usan las imágenes ya generadas en public/photos.
@@ -33,8 +38,7 @@ function* walk(dir) {
 
 function classify(file) {
   const [a, b] = relative(SRC, file).split('/');
-  if (CATS.includes(a)) return { cat: a === 'portada' ? 'home' : a };
-  if (a === 'proyectos' && b && !EXT.has(extname(b).toLowerCase())) return { cat: 'project', project: b };
+  if (CATS.includes(a)) return { cat: a === 'portada' ? 'home' : a, proj: a === 'portada' ? undefined : b };
   return null;
 }
 
@@ -55,7 +59,8 @@ for (const file of walk(SRC)) {
   const meta = classify(file);
   if (!meta) continue;
   // Misma foto (mismo contenido) dentro de la misma categoría/proyecto: solo una vez.
-  const key = (meta.project || meta.cat) + ':' + createHash('sha1').update(readFileSync(file)).digest('hex');
+  const sha = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 12);
+  const key = meta.cat + ':' + sha;
   if (seenContent.has(key)) { dupes++; continue; }
   seenContent.add(key);
   const id = createHash('sha1').update(relative(SRC, file)).digest('hex').slice(0, 10);
@@ -74,8 +79,10 @@ for (const file of walk(SRC)) {
   const n = data.length / 3;
   const { h: hue, s, l } = rgbToHsl(r / n, g / n, b / n);
   const ratio = +(w / h).toFixed(4);
-  const title = titles[relative(SRC, file)] || '';
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, ...(title ? { title } : {}) });
+  const rel = relative(SRC, file);
+  const title = titles[rel] || '';
+  const works = meta.cat === 'home' ? [] : worksFor(rel);
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(works.length ? { works } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

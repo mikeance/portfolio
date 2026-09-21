@@ -4,7 +4,7 @@ export type Lang = keyof typeof languages;
 export const ui = {
   es: {
     'nav.photography': 'Fotografía',
-    'nav.projects': 'Proyectos',
+    'nav.works': 'Works',
     'nav.contact': 'Contacto',
     'nav.soon': 'Próximamente',
     'cat.faces': 'Faces',
@@ -18,7 +18,7 @@ export const ui = {
   },
   en: {
     'nav.photography': 'Photography',
-    'nav.projects': 'Projects',
+    'nav.works': 'Works',
     'nav.contact': 'Contact',
     'nav.soon': 'Coming soon',
     'cat.faces': 'Faces',

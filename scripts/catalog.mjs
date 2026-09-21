@@ -20,6 +20,10 @@ const load = (f, d) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : d)
 const cache = load(join(OUT, 'cache.json'), {});
 const pre = load(join(OUT, 'preseleccion.json'), {});
 const titles = load(join(OUT, 'titulos.json'), {});
+const WORKS = load(join(ROOT, 'src/data/works.json'), []);
+const manualWorks = load(join(OUT, 'works.json'), {});
+const rx = (list) => (list || []).map((r) => new RegExp(r, 'i'));
+const worksFor = (rel) => manualWorks[rel] ?? WORKS.filter((w) => rx(w.match).some((r) => r.test(rel)) && !rx(w.exclude).some((r) => r.test(rel))).map((w) => w.slug);
 const homeList = load(join(OUT, 'portada.json'), []); const home = new Map(homeList.map((p, i) => [p, i + 1]));
 const hidden = new Set(load(join(OUT, 'ocultas.json'), [])); // fotos que no se muestran en el catálogo (los archivos no se tocan)
 
@@ -108,10 +112,11 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
   if (o.lum > 0.94) fl.push('clara');
   if (o.sharp < p10) fl.push('borrosa');
   if (similar.has(f.path)) fl.push('similar');
-  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0, t: titles[f.path] || '', md: existsSync(join(MED, o.id + '.jpg')) ? 1 : 0 };
+  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0, t: titles[f.path] || '', md: existsSync(join(MED, o.id + '.jpg')) ? 1 : 0, wk: worksFor(f.path) };
 });
 
 const summary = {
+  works: WORKS.map((w) => ({ slug: w.slug, name: w.name })),
   generado: new Date().toISOString(), carpeta: FOTO, imagenes: images.length, ocultas: hidden.size,
   duplicados_en_carpeta: dupFiles.length, otros_archivos: others.map((f) => f.path), con_error: photos.filter((p) => p.err).map((p) => [p.p, p.err]),
 };
