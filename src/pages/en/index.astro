@@ -1,7 +1,7 @@
 ---
 import MosaicPage from '../../views/MosaicPage.astro';
-import { photos } from '../../lib/photos';
-// Portada: las fotos de fotos/portada; si no hay ninguna, todas las categorías.
+import { photos, homeMix } from '../../lib/photos';
+// Portada: el orden manual de fotos/portada si existe; si no, lo mejor de cada categoría (~240) con la estética de Life.
 const home = photos.filter((p) => p.cat === 'home');
 ---
-<MosaicPage lang="en" path="/" photos={home.length ? home : photos.filter((p) => p.cat !== 'project')} order={home.length ? 'manual' : 'life'} />
+<MosaicPage lang="en" path="/" photos={home.length ? home : homeMix(photos)} order={home.length ? 'manual' : 'manual'} />

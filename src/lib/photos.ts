@@ -79,3 +79,23 @@ export function sortFaces(list: Photo[]): Photo[] {
   colour.forEach((p, i) => { out.push(p); while (bi < bw.length && i + 1 >= next) { out.push(bw[bi++]); next += step; } });
   return [...out, ...bw.slice(bi)];
 }
+
+/** Portada automática: lo mejor de cada categoría (unas 240 fotos) mezclado con la estética de Life. */
+export function homeMix(all: Photo[], total = 240): Photo[] {
+  const light = (p: Photo) => Math.min(p.lum, 0.8) - (p.lum < 0.28 ? 0.4 : 0);
+  const quality: Record<string, (p: Photo) => number> = {
+    faces: (p) => 0.6 * (Math.min(p.face ?? 0, 0.25) / 0.25) + 0.4 * light(p),
+    editorial: (p) => light(p) + (p.sat >= 0.12 ? 0.15 : 0),
+    lifestyle: (p) => light(p) + (p.sat >= 0.12 && p.hue >= 70 && p.hue <= 250 ? 0.35 : 0),
+  };
+  const cats = ['faces', 'editorial', 'lifestyle'];
+  const per = Math.ceil(total / cats.length);
+  const seen = new Set<string>();
+  const picked: Photo[] = [];
+  for (const c of cats) {
+    const list = all.filter((p) => p.cat === c).sort((a, b) => quality[c](b) - quality[c](a));
+    let n = 0;
+    for (const p of list) { if (n >= per) break; if (p.sha && seen.has(p.sha)) continue; if (p.sha) seen.add(p.sha); picked.push(p); n++; }
+  }
+  return sortLife(picked);
+}
