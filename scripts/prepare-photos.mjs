@@ -24,6 +24,9 @@ if (!existsSync(SRC)) { console.log('ℹ sin carpeta fotos/: se mantienen las im
 mkdirSync(OUT, { recursive: true });
 mkdirSync(join(ROOT, 'src/data'), { recursive: true });
 // Títulos: fotos/titulos.json  { "faces/Proyecto/archivo.jpg": "Nombre · Lugar · 2024" }
+// Orden manual por categoría: fotos/orden.json { "faces": ["faces/Sesión/foto.jpg", ...], "lifestyle": [...] }
+const orden = existsSync(join(SRC, 'orden.json')) ? JSON.parse(readFileSync(join(SRC, 'orden.json'), 'utf8')) : {};
+const ordIdx = {}; for (const [c, list] of Object.entries(orden)) list.forEach((rel, i) => { ordIdx[rel] = i; });
 const titles = existsSync(join(SRC, 'titulos.json')) ? JSON.parse(readFileSync(join(SRC, 'titulos.json'), 'utf8')) : {};
 
 function* walk(dir) {
@@ -83,7 +86,7 @@ for (const file of walk(SRC)) {
   const rel = relative(SRC, file);
   const title = titles[rel] || '';
   const works = meta.cat === 'home' ? [] : worksFor(rel);
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(works.length ? { works } : {}) });
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(works.length ? { works } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "photos": "node scripts/prepare-photos.mjs && node scripts/faces.mjs",
+    "photos": "node scripts/prepare-photos.mjs && node scripts/faces.mjs && node scripts/orden-auto.mjs",
     "predev": "npm run photos",
     "prebuild": "npm run photos",
     "dev": "astro dev",

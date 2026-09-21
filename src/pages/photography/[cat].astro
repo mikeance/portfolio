@@ -1,9 +1,14 @@
 ---
 import MosaicPage from '../../views/MosaicPage.astro';
-import { photos, categories } from '../../lib/photos';
+import { photos, categories, sortLife, sortFaces, sortByColor } from '../../lib/photos';
 import { useTranslations } from '../../i18n/ui';
 export function getStaticPaths() { return categories.map((cat) => ({ params: { cat } })); }
 const { cat } = Astro.params;
-const t = useTranslations('es');
+const t = useTranslations('en');
+const list = photos.filter((p) => p.cat === cat);
+// Orden: el fijado a mano en el catálogo (ord) si existe; el resto, con el criterio automático de la categoría.
+const auto = (l: typeof list) => (cat === 'lifestyle' ? sortLife(l) : cat === 'faces' ? sortFaces(l) : sortByColor(l));
+const manual = list.filter((p) => p.ord !== undefined).sort((a, b) => a.ord! - b.ord!);
+const items = manual.length ? [...manual, ...auto(list.filter((p) => p.ord === undefined))] : auto(list);
 ---
-<MosaicPage lang="es" path={`/photography/${cat}`} title={t(`cat.${cat}` as any)} photos={photos.filter((p) => p.cat === cat)} order={cat === 'lifestyle' ? 'life' : cat === 'faces' ? 'faces' : 'color'} />
+<MosaicPage lang="en" path={`/photography/${cat}`} title={t(`cat.${cat}` as any)} photos={items} order="manual" />

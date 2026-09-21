@@ -5,4 +5,4 @@ import { photos, homeMix, sortLife, spreadSessions, jitter } from '../lib/photos
 
 const home = photos.filter((p) => p.cat === 'home');
 ---
-<MosaicPage lang="es" path="/" photos={home.length ? home : homeMix(photos)} order="manual" />
+<MosaicPage lang="en" path="/" photos={home.length ? home : homeMix(photos)} order="manual" />

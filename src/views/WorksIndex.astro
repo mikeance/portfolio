@@ -10,7 +10,7 @@ const SHOW_WORKS = false;
   <main class="wrap">
     {/* WORKS en pausa: se muestra "Coming soon". Para reactivar, poner SHOW_WORKS = true aquí y en pages/works/[slug].astro */}
     {!SHOW_WORKS && <p class="soon">{t('nav.soon')}</p>}
-    <ul class="works" hidden={!SHOW_WORKS}>
+    {SHOW_WORKS && <ul class="works">
       {works.map((w) => (
         <li>
           <a href={localePath(lang, `/works/${w.slug}`)}>
@@ -21,7 +21,7 @@ const SHOW_WORKS = false;
           </a>
         </li>
       ))}
-    </ul>
+    </ul>}
   </main>
 </Base>
 <style>

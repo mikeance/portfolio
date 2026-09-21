@@ -5,6 +5,7 @@ export default {
     const url = new URL(request.url);
     const wrongHost = url.hostname !== MAIN && !url.hostname.endsWith('.workers.dev');
     const scheme = (request.headers.get('cf-visitor') || '').includes('"http"') ? 'http' : url.protocol.replace(':', '');
+    if (url.pathname === '/en' || url.pathname.startsWith('/en/')) { url.pathname = url.pathname.slice(3) || '/'; url.protocol = 'https:'; url.hostname = MAIN; return Response.redirect(url.toString(), 301); }
     if (wrongHost || scheme === 'http') {
       if (wrongHost) url.hostname = MAIN;
       url.protocol = 'https:';

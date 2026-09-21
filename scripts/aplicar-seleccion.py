@@ -28,6 +28,7 @@ for k, v in d['seleccion'].items():
 titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
 works = {p: w for p, w in d.get('works', {}).items() if p in sel}
+orden = {k: [p for p in v if p in sel] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L)
 print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
 pre = dict(sel)
@@ -65,7 +66,7 @@ def dest_for(p, c, prefix=''):
         return os.path.join(W, 'fotos', c, prefix + re.sub(r'\s+', '_', proj + '__' + rest))
     return os.path.join(W, 'fotos', c, proj, prefix + re.sub(r'\s+', '_', rest))
 
-n, seen, web_titles, web_works = 0, set(), {}, {}
+n, seen, web_titles, web_works, origen = 0, set(), {}, {}, {}
 for p, ks in sel.items():
     src = os.path.join(FOTO, p)
     if not os.path.exists(src):
@@ -76,6 +77,7 @@ for p, ks in sel.items():
         seen.add(dest); os.makedirs(os.path.dirname(dest), exist_ok=True)
         if subprocess.run(['cp', '-pc', src, dest]).returncode == 0: n += 1
         rel = os.path.relpath(dest, os.path.join(W, 'fotos'))
+        origen[rel] = p
         if p in titles: web_titles[rel] = titles[p]
         if p in works: web_works[rel] = works[p]
 for i, p in enumerate(portada, 1):
@@ -86,6 +88,10 @@ for i, p in enumerate(portada, 1):
         if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
 json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
 json.dump(web_works, open(os.path.join(W, 'fotos', 'works.json'), 'w'), ensure_ascii=False, indent=1)
+json.dump(origen, open(os.path.join(W, 'fotos', 'origen.json'), 'w'), ensure_ascii=False)
+web_orden = {NAME[k]: [os.path.relpath(dest_for(p, NAME[k]), os.path.join(W, 'fotos')) for p in v if k in sel.get(p, '')] for k, v in orden.items() if k in NAME}
+json.dump(web_orden, open(os.path.join(W, 'fotos', 'orden.json'), 'w'), ensure_ascii=False)
+print('orden manual:', {k: len(v) for k, v in web_orden.items()} or 'ninguno (automático)')
 print('web:', n, 'copias · portada:', len(portada), '· títulos:', len(web_titles))
 for c in NAME.values():
     b = os.path.join(W, 'fotos', c)

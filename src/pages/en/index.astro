@@ -1,8 +1,0 @@
----
-import MosaicPage from '../../views/MosaicPage.astro';
-import { photos, homeMix, sortLife, spreadSessions, jitter } from '../../lib/photos';
-// Portada: las fotos y el ORDEN del editor de portada (fotos/portada); si no hay ninguna, lo mejor de cada categoría (~240).
-
-const home = photos.filter((p) => p.cat === 'home');
----
-<MosaicPage lang="en" path="/" photos={home.length ? home : homeMix(photos)} order="manual" />
