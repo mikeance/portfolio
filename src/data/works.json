@@ -1,16 +1,117 @@
 [
-  { "slug": "scrapworld", "name": "SCRAPWORLD",
-    "match": ["scrap ?world", "\\bsw\\b", "sw25", "swbasic", "zalando", "coruña popup"],
-    "exclude": ["Scrapworld2025-(?:[1-9]|[12]\\d|3[0-6]|8[1-9]|9\\d|10\\d)\\.jpg"] },
-  { "slug": "hola-coffee", "name": "HOLA COFFEE", "match": ["hola ?coffee"] },
-  { "slug": "minishopmadrid", "name": "MINISHOPMADRID", "match": ["DESIGN[ /-]+MINI", "MINI X SW", "mini ?shop"], "exclude": ["\\bEDD\\b"] },
-  { "slug": "eddmond-studios", "name": "EDDMOND STUDIOS", "match": ["edmmond", "eddmond", "MINI[ /_-]+EDD\\b"] },
-  { "slug": "adidas-real-madrid", "name": "ADIDAS & REAL MADRID", "match": ["adidas", "real madrid"] },
-  { "slug": "porsche-x-scrapworld", "name": "PORSCHE x SCRAPWORLD", "match": ["porsche"] },
-  { "slug": "kangol", "name": "KANGOL", "match": ["kangol", "giaansta"] },
-  { "slug": "paula-ballesteros", "name": "PAULA BALLESTEROS", "match": ["paula"] },
-  { "slug": "galag", "name": "GALAG", "match": ["galag"] },
-  { "slug": "fitzgerald-x-scrapworld", "name": "THE FITZGERALD CO x SCRAPWORLD", "match": ["fitz"] },
-  { "slug": "nike-fc-x-scrapworld", "name": "NIKE FC x SCRAPWORLD", "match": ["SW ?FC", "nike"] },
-  { "slug": "home-run-nyc", "name": "HOME RUN NYC x MENTAL ATHLETIC", "match": ["Scrapworld2025-(?:[1-9]|[12]\\d|3[0-6]|8[1-9]|9\\d|10\\d)\\.jpg", "home ?run", "mental athletic", "nyclocals"] }
+  {
+    "slug": "scrapworld",
+    "name": "SCRAPWORLD",
+    "match": [
+      "scrap ?world",
+      "\\bsw\\b",
+      "sw25",
+      "swbasic",
+      "zalando",
+      "coruña popup"
+    ],
+    "exclude": [
+      "Scrapworld2025-(?:[1-9]|[12]\\d|3[0-6]|8[1-9]|9\\d|10\\d)\\.jpg"
+    ]
+  },
+  {
+    "slug": "hola-coffee",
+    "name": "HOLA COFFEE",
+    "match": [
+      "hola ?coffee"
+    ]
+  },
+  {
+    "slug": "minishopmadrid",
+    "name": "MINISHOPMADRID",
+    "match": [
+      "DESIGN[ /-]+MINI",
+      "MINI X SW",
+      "mini ?shop"
+    ],
+    "exclude": [
+      "\\bEDD\\b"
+    ]
+  },
+  {
+    "slug": "eddmond-studios",
+    "name": "EDDMOND STUDIOS",
+    "match": [
+      "edmmond",
+      "eddmond",
+      "MINI[ /_-]+EDD\\b"
+    ]
+  },
+  {
+    "slug": "adidas-real-madrid",
+    "name": "ADIDAS & REAL MADRID",
+    "match": [
+      "adidas",
+      "real madrid"
+    ]
+  },
+  {
+    "slug": "porsche-x-scrapworld",
+    "name": "PORSCHE x SCRAPWORLD",
+    "match": [
+      "porsche"
+    ]
+  },
+  {
+    "slug": "kangol",
+    "name": "KANGOL",
+    "match": [
+      "kangol",
+      "giaansta"
+    ]
+  },
+  {
+    "slug": "paula-ballesteros",
+    "name": "PAULA BALLESTEROS",
+    "match": [
+      "paula"
+    ]
+  },
+  {
+    "slug": "galag",
+    "name": "GALAG",
+    "match": [
+      "galag"
+    ]
+  },
+  {
+    "slug": "fitzgerald-x-scrapworld",
+    "name": "THE FITZGERALD CO x SCRAPWORLD",
+    "match": [
+      "fitz"
+    ]
+  },
+  {
+    "slug": "nike-fc-x-scrapworld",
+    "name": "NIKE FC x SCRAPWORLD",
+    "match": [
+      "SW ?FC",
+      "nike"
+    ]
+  },
+  {
+    "slug": "home-run-nyc",
+    "name": "HOME RUN NYC x MENTAL ATHLETIC",
+    "match": [
+      "Scrapworld2025-(?:[1-9]|[12]\\d|3[0-6]|8[1-9]|9\\d|10\\d)\\.jpg",
+      "home ?run",
+      "mental athletic",
+      "nyclocals"
+    ]
+  },
+  {
+    "slug": "makedonsko-spisanie",
+    "name": "МАКЕДОНСКО СПИСАНИЕ",
+    "match": [
+      "makedon",
+      "македон",
+      "spisanie",
+      "списание"
+    ]
+  }
 ]
