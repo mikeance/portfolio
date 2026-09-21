@@ -1,9 +1,9 @@
 ---
 import type { Photo } from '../lib/photos';
-import { sortByColor, sortLife } from '../lib/photos';
-interface Props { photos: Photo[]; order?: 'color' | 'manual' | 'life' }
+import { sortByColor, sortLife, sortFaces } from '../lib/photos';
+interface Props { photos: Photo[]; order?: 'color' | 'manual' | 'life' | 'faces' }
 const { photos, order = 'color' } = Astro.props;
-const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) : sortByColor(photos);
+const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) : order === 'faces' ? sortFaces(photos) : sortByColor(photos);
 ---
 <div class="grid">
   {items.map((p) => (

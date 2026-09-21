@@ -12,6 +12,8 @@ export interface Photo {
   sha?: string;   // huella del contenido (para no repetir la misma foto)
   title?: string;
   works?: string[];
+  face?: number;  // área de la cara mayor (0–1), solo en FACES
+  faces?: number;
 }
 
 export const photos = all as Photo[];
@@ -50,5 +52,30 @@ export function sortLife(list: Photo[]): Photo[] {
     out.push(p);
     while (bi < bw.length && i + 1 >= next) { out.push(bw[bi++]); next += step; }
   });
+  return [...out, ...bw.slice(bi)];
+}
+
+/** Orden para FACES: primero los planos más cerrados (cara grande) y luminosos; cada sesión (mismo sujeto)
+ *  se reparte a lo largo de todo el scroll para no repetir a la misma persona cerca; B/N intercalado. */
+export function sortFaces(list: Photo[]): Photo[] {
+  const light = (p: Photo) => Math.min(p.lum, 0.8) - (p.lum < 0.28 ? 0.3 : 0);
+  const closeup = (p: Photo) => Math.min(p.face ?? 0, 0.25) / 0.25;
+  const score = (p: Photo) => 0.6 * closeup(p) + 0.4 * light(p);
+  const N = list.length;
+  const groups = new Map<string, Photo[]>();
+  for (const p of list) groups.set(p.proj || '', [...(groups.get(p.proj || '') || []), p]);
+  const key = new Map<Photo, number>();
+  for (const g of groups.values()) {
+    g.sort((a, b) => score(b) - score(a));
+    g.forEach((p, i) => key.set(p, ((i + 0.5) / g.length) * N - 0.5 * N * score(p)));
+  }
+  const byKey = (a: Photo, b: Photo) => key.get(a)! - key.get(b)!;
+  const colour = list.filter((p) => p.sat >= 0.12).sort(byKey);
+  const bw = list.filter((p) => p.sat < 0.12).sort(byKey);
+  if (!colour.length || !bw.length) return [...colour, ...bw];
+  const out: Photo[] = [];
+  const step = colour.length / bw.length;
+  let next = step / 2, bi = 0;
+  colour.forEach((p, i) => { out.push(p); while (bi < bw.length && i + 1 >= next) { out.push(bw[bi++]); next += step; } });
   return [...out, ...bw.slice(bi)];
 }

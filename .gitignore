@@ -34,3 +34,6 @@ WEB WIP.svg
 
 # wrangler
 .wrangler/
+
+# binarios locales
+.cache/
