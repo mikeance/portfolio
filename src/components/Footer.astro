@@ -1,0 +1,10 @@
+---
+import { useTranslations, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+---
+<footer>© {new Date().getFullYear()} {site.name}. {t('footer.rights')}</footer>
+<style>
+  footer { padding: 3rem var(--gutter); color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-align: center; }
+</style>

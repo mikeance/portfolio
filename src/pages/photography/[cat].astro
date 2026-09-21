@@ -1,0 +1,9 @@
+---
+import MosaicPage from '../../views/MosaicPage.astro';
+import { photos, categories } from '../../lib/photos';
+import { useTranslations } from '../../i18n/ui';
+export function getStaticPaths() { return categories.map((cat) => ({ params: { cat } })); }
+const { cat } = Astro.params;
+const t = useTranslations('es');
+---
+<MosaicPage lang="es" path={`/photography/${cat}`} title={t(`cat.${cat}` as any)} photos={photos.filter((p) => p.cat === cat)} />

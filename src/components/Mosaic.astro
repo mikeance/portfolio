@@ -1,0 +1,96 @@
+---
+import type { Photo } from '../lib/photos';
+import { sortByColor } from '../lib/photos';
+interface Props { photos: Photo[]; closeLabel: string }
+const { photos, closeLabel } = Astro.props;
+const items = sortByColor(photos).map((p) => ({ id: p.id, r: p.ratio }));
+---
+<main>
+  <div id="mosaic" data-items={JSON.stringify(items)}></div>
+  <div id="sentinel" aria-hidden="true"></div>
+</main>
+<div id="lightbox" hidden>
+  <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
+  <img alt="" />
+</div>
+
+<style>
+  main { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
+  #mosaic { display: flex; gap: 10px; align-items: flex-start; }
+  #mosaic :global(.col) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  #mosaic :global(figure) { margin: 0; padding: 6px; background: var(--mat); cursor: zoom-in; }
+  #mosaic :global(img) { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.5s; }
+  #mosaic :global(img.ok) { opacity: 1; }
+  #sentinel { height: 1px; }
+  #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
+  #lightbox[hidden] { display: none; }
+  #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; }
+  #lb-close { all: unset; position: absolute; top: 1rem; right: 1.5rem; font-size: 2.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
+</style>
+
+<script>
+  const root = document.getElementById('mosaic')!;
+  const items: { id: string; r: number }[] = JSON.parse(root.dataset.items || '[]');
+  const sentinel = document.getElementById('sentinel')!;
+  const lb = document.getElementById('lightbox')!;
+  const lbImg = lb.querySelector('img')!;
+  const BATCH = 20;
+  let cols: HTMLElement[] = [];
+  let next = 0;
+
+  const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
+
+  function build() {
+    root.innerHTML = '';
+    cols = Array.from({ length: colCount() }, () => {
+      const c = document.createElement('div');
+      c.className = 'col';
+      root.appendChild(c);
+      return c;
+    });
+    next = 0;
+    count = 0;
+    fill();
+  }
+
+  // Cada foto va a la columna más corta; con el orden por color, cada "fila" reúne tonos vecinos.
+  const heights = () => cols.map((c) => c.offsetHeight);
+  function add(it: { id: string; r: number }, i: number) {
+    const h = heights();
+    const target = i < cols.length ? i : h.indexOf(Math.min(...h));
+    const fig = document.createElement('figure');
+    const img = document.createElement('img');
+    img.src = `/photos/${it.id}-800.webp`;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.width = 800;
+    img.height = Math.round(800 / it.r);
+    img.addEventListener('load', () => img.classList.add('ok'));
+    fig.dataset.id = it.id;
+    fig.appendChild(img);
+    cols[target].appendChild(fig);
+  }
+
+  let count = 0;
+  const nearEnd = () => next < items.length && sentinel.getBoundingClientRect().top < innerHeight + 1200;
+  // Cada foto se muestra una sola vez: se carga por lotes mientras se baja y, al llegar a la última, no hay más scroll.
+  function fill() {
+    while (nearEnd()) for (let k = 0; k < BATCH && next < items.length; k++) add(items[next++], count++);
+  }
+  addEventListener('scroll', fill, { passive: true });
+
+  root.addEventListener('click', (e) => {
+    const fig = (e.target as HTMLElement).closest('figure');
+    if (!fig) return;
+    lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
+    lb.hidden = false;
+  });
+  const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
+  lb.addEventListener('click', closeLb);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+
+  let cc = colCount();
+  addEventListener('resize', () => { if (colCount() !== cc) { cc = colCount(); build(); } });
+  build();
+</script>

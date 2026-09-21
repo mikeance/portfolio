@@ -1,0 +1,25 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+import '../styles/global.css';
+interface Props { lang: Lang; path: string; title?: string }
+const { lang, path, title } = Astro.props;
+const t = useTranslations(lang);
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title ? `${title} · ${site.name}` : `${site.name} · Photography`}</title>
+    <meta name="description" content={t('site.description')} />
+  </head>
+  <body>
+    <Header lang={lang} current={path} />
+    <slot />
+    <Footer lang={lang} />
+  </body>
+</html>

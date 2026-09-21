@@ -1,0 +1,62 @@
+---
+import { existsSync } from 'node:fs';
+import { localePath, useTranslations, type Lang } from '../i18n/ui';
+import { categories, projects } from '../lib/photos';
+import { site } from '../data/site';
+interface Props { lang: Lang; current: string }
+const { lang, current } = Astro.props;
+const t = useTranslations(lang);
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const hasLogo = existsSync(new URL('../../public/logo.svg', import.meta.url));
+---
+<header>
+  <a class="brand" href={localePath(lang, '/')} aria-label={site.name}>
+    {hasLogo ? <img src="/logo.svg" alt={site.name} height="84" /> : <span>{site.name}</span>}
+  </a>
+  <nav>
+    <div class="dd">
+      <button type="button" aria-haspopup="true">{t('nav.photography')}</button>
+      <ul>
+        {categories.map((c) => (
+          <li><a href={localePath(lang, `/photography/${c}`)} aria-current={current === `/photography/${c}` ? 'page' : undefined}>{t(`cat.${c}`)}</a></li>
+        ))}
+      </ul>
+    </div>
+    <div class="dd">
+      <button type="button" aria-haspopup="true">{t('nav.projects')}</button>
+      <ul>
+        {projects.length === 0 && <li class="soon">{t('nav.soon')}</li>}
+        {projects.map((p) => (
+          <li><a href={localePath(lang, `/projects/${p.slug}`)} aria-current={current === `/projects/${p.slug}` ? 'page' : undefined}>{p.name.replace(/^\d{4}-\d{2}\s*/, '')}</a></li>
+        ))}
+      </ul>
+    </div>
+    <div class="dd">
+      <button type="button" aria-haspopup="true">{t('nav.contact')}</button>
+      <ul>
+        <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+        <li><a href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener">Instagram · @{site.instagram}</a></li>
+      </ul>
+    </div>
+    <a class="lang" href={localePath(other, current)} hreflang={other} lang={other}>{other.toUpperCase()}</a>
+  </nav>
+</header>
+<style>
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.75rem var(--gutter) 1.25rem; }
+  .brand { font-size: 1.15rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500; line-height: 84px; }
+  .brand img { display: block; height: 84px; width: auto; }
+  nav { display: flex; gap: 1.75rem; align-items: flex-start; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .dd { position: relative; }
+  .dd button { all: unset; cursor: pointer; padding: 0.4rem 0; color: var(--muted); transition: color 0.2s; }
+  .dd:hover button, .dd:focus-within button { color: var(--fg); }
+  .dd ul {
+    display: none; position: absolute; right: 0; top: 100%; margin: 0; padding: 0.75rem 1rem; list-style: none;
+    background: var(--bg); border: 1px solid var(--line); min-width: 11rem; white-space: nowrap; z-index: 20;
+  }
+  .dd:hover ul, .dd:focus-within ul { display: block; }
+  .dd li { padding: 0.3rem 0; text-transform: none; letter-spacing: 0.02em; font-size: 0.85rem; }
+  .dd li a { color: var(--muted); } .dd li a:hover, .dd li a[aria-current='page'] { color: var(--fg); }
+  .soon { color: var(--muted); font-style: italic; }
+  .lang { padding: 0.4rem 0; color: var(--muted); } .lang:hover { color: var(--fg); }
+  @media (max-width: 560px) { header { flex-direction: column; } nav { gap: 1.1rem; flex-wrap: wrap; } .dd ul { left: 0; right: auto; } }
+</style>
