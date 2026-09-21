@@ -4,10 +4,13 @@ import { localePath, useTranslations, type Lang } from '../i18n/ui';
 import { works } from '../lib/works';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
+const SHOW_WORKS = false;
 ---
 <Base lang={lang} path="/works" title={t('nav.works')}>
   <main class="wrap">
-    <ul class="works">
+    {/* WORKS en pausa: se muestra "Coming soon". Para reactivar, poner SHOW_WORKS = true aquí y en pages/works/[slug].astro */}
+    {!SHOW_WORKS && <p class="soon">{t('nav.soon')}</p>}
+    <ul class="works" hidden={!SHOW_WORKS}>
       {works.map((w) => (
         <li>
           <a href={localePath(lang, `/works/${w.slug}`)}>
@@ -22,6 +25,7 @@ const t = useTranslations(lang);
   </main>
 </Base>
 <style>
+  .soon { font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 4rem 0; text-align: center; }
   .works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem 1.25rem; }
   @media (max-width: 1099px) { .works { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 799px) { .works { grid-template-columns: repeat(2, 1fr); } }

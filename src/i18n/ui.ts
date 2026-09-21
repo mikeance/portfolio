@@ -6,7 +6,7 @@ export const ui = {
     'nav.photography': 'Fotografía',
     'nav.works': 'Works',
     'nav.contact': 'Contacto',
-    'nav.soon': 'Próximamente',
+    'nav.soon': 'Coming soon',
     'cat.faces': 'Faces',
     'cat.editorial': 'Editorial',
     'cat.lifestyle': 'Life',
