@@ -105,13 +105,18 @@
     ]
   },
   {
-    "slug": "makedonsko-spisanie",
-    "name": "МАКЕДОНСКО СПИСАНИЕ",
+    "slug": "stole-dimitrievski",
+    "name": "STOLE DIMITRIEVSKI",
     "match": [
-      "makedon",
-      "македон",
-      "spisanie",
-      "списание"
+      "stole",
+      "dimitriev"
+    ]
+  },
+  {
+    "slug": "clockers",
+    "name": "CLOCKERS",
+    "match": [
+      "clockers"
     ]
   }
 ]
