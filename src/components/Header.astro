@@ -4,6 +4,9 @@ import { join } from 'node:path';
 import { localePath, useTranslations, type Lang } from '../i18n/ui';
 import { categories } from '../lib/photos';
 import { site } from '../data/site';
+import menu from '../data/menu.json';
+const word = (key: string) => menu.find((w) => w.key === key)!;
+const H = 12; // alto de las palabras en px
 interface Props { lang: Lang; current: string }
 const { lang, current } = Astro.props;
 const t = useTranslations(lang);
@@ -15,11 +18,17 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   </a>
   <nav>
     {categories.map((c) => (
-      <a class="top" href={localePath(lang, `/photography/${c}`)} aria-current={current === `/photography/${c}` ? 'page' : undefined}>{t(`cat.${c}`)}</a>
+      <a class="top" href={localePath(lang, `/photography/${c}`)} aria-current={current === `/photography/${c}` ? 'page' : undefined} aria-label={t(`cat.${c}`)}>
+        <svg class="w" viewBox={word(c).vb.join(' ')} height={H} width={+(H * word(c).vb[2] / word(c).vb[3]).toFixed(1)} aria-hidden="true">{word(c).letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
+      </a>
     ))}
-    <a class="top" href={localePath(lang, '/works')} aria-current={current.startsWith('/works') ? 'page' : undefined}>{t('nav.works')}</a>
+    <a class="top" href={localePath(lang, '/works')} aria-current={current.startsWith('/works') ? 'page' : undefined} aria-label={t('nav.works')}>
+      <svg class="w" viewBox={word('works').vb.join(' ')} height={H} width={+(H * word('works').vb[2] / word('works').vb[3]).toFixed(1)} aria-hidden="true">{word('works').letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
+    </a>
     <div class="dd">
-      <button type="button" aria-haspopup="true">{t('nav.contact')}</button>
+      <button type="button" aria-haspopup="true" aria-label={t('nav.contact')}>
+        <svg class="w" viewBox={word('contact').vb.join(' ')} height={H} width={+(H * word('contact').vb[2] / word('contact').vb[3]).toFixed(1)} aria-hidden="true">{word('contact').letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
+      </button>
       <ul>
         <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
         <li><a href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener">Instagram · @{site.instagram}</a></li>
@@ -32,7 +41,10 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   .brand { font-size: 1.15rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500; line-height: 84px; }
   .brand img { display: block; height: 84px; width: auto; }
   nav { display: flex; gap: 1.75rem; align-items: center; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  .top { color: var(--muted); padding: 0.4rem 0; } .top:hover, .top[aria-current='page'] { color: var(--fg); }
+  .top { color: var(--muted); padding: 0.4rem 0; display: inline-flex; } .top:hover, .top[aria-current='page'], .top.on { color: var(--fg); }
+  .w { display: block; overflow: visible; }
+  .w path { fill: currentColor; transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); transform-box: view-box; transform-origin: 0 0; }
+  .top:hover .w path, .top[aria-current='page'] .w path, .top.on .w path, .dd:hover .w path, .dd:focus-within .w path { transform: var(--m); }
   .dd { position: relative; }
   .dd button { all: unset; cursor: pointer; padding: 0.4rem 0; color: var(--muted); transition: color 0.2s; }
   .dd:hover button, .dd:focus-within button { color: var(--fg); }
@@ -46,3 +58,13 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   .soon { color: var(--muted); font-style: italic; }
   @media (max-width: 560px) { header { flex-direction: column; } nav { gap: 1.1rem; flex-wrap: wrap; } .dd ul { left: 0; right: auto; } }
 </style>
+<script>
+  // En táctil no hay "hover": el primer toque descoloca las letras y la navegación llega medio segundo después.
+  document.querySelectorAll<HTMLAnchorElement>('nav a.top').forEach((a) => {
+    a.addEventListener('touchend', (e) => {
+      if (a.classList.contains('on')) return;
+      e.preventDefault(); a.classList.add('on');
+      setTimeout(() => { location.href = a.href; }, 550);
+    }, { passive: false });
+  });
+</script>
