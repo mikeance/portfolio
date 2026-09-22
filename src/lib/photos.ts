@@ -6,6 +6,7 @@ export interface Photo {
   hue: number;
   sat: number;
   lum: number;
+  lumB?: number;  // luz del cuarto inferior (color del texto superpuesto)
   cat: 'faces' | 'editorial' | 'lifestyle' | 'home' | 'work';
   proj?: string;  // carpeta de sesión/proyecto dentro de fotos/<categoría>/
   src?: string;   // ruta relativa dentro de fotos/

@@ -81,14 +81,15 @@ for (const file of walk(SRC)) {
   if (!existsSync(large)) await base.clone().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toFile(large);
   if (!existsSync(small)) await base.clone().resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 78 }).toFile(small);
   const { data } = await sharp(small).resize(8, 8, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  let r = 0, g = 0, b = 0;
-  for (let i = 0; i < data.length; i += 3) { r += data[i]; g += data[i + 1]; b += data[i + 2]; }
+  let r = 0, g = 0, b = 0, lb = 0;
+  for (let i = 0; i < data.length; i += 3) { r += data[i]; g += data[i + 1]; b += data[i + 2]; if (i >= data.length * 0.75) lb += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255; }
+  const lumBottom = +(lb / (data.length / 3 / 4)).toFixed(3); // luz media del cuarto inferior
   const n = data.length / 3;
   const { h: hue, s, l } = rgbToHsl(r / n, g / n, b / n);
   const ratio = +(w / h).toFixed(4);
   const rel = relative(SRC, file);
   const title = titles[rel] || '';
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), lumB: lumBottom, ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

@@ -9,7 +9,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
   {items.map((p) => (
     <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio} data-title={p.title}>
       <img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
-      {p.title && <figcaption>{p.title}</figcaption>}
+      {p.title && <figcaption class={(p.lumB ?? p.lum) < 0.45 ? 'light' : undefined}>{p.title}</figcaption>}
     </figure>
   ))}
 </div>
@@ -21,7 +21,8 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
   /* Texto de la foto: discreto, en gris, en la parte inferior; aparece al pasar el cursor */
-  figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.45rem 0.6rem; font-size: 0.7rem; letter-spacing: 0.04em; color: var(--muted); background: rgba(255, 255, 255, 0.82); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.45rem 0.6rem; font-size: 0.7rem; letter-spacing: 0.04em; text-align: center; color: rgba(40, 40, 40, 0.75); text-shadow: 0 0 6px rgba(255, 255, 255, 0.6); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  figcaption.light { color: rgba(255, 255, 255, 0.85); text-shadow: 0 0 6px rgba(0, 0, 0, 0.5); }
   figure:hover figcaption { opacity: 1; }
   @media (hover: none) { figcaption { display: none; } }
 </style>
