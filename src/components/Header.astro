@@ -6,7 +6,7 @@ import { categories } from '../lib/photos';
 import { site } from '../data/site';
 import menu from '../data/menu.json';
 const word = (key: string) => menu.find((w) => w.key === key)!;
-const H = 12; // alto de las palabras en px
+const H = 24; // alto de las palabras en px (navegador); en móvil se reduce por CSS
 interface Props { lang: Lang; current: string }
 const { lang, current } = Astro.props;
 const t = useTranslations(lang);
@@ -40,9 +40,10 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.75rem var(--gutter) 1.25rem; }
   .brand { font-size: 1.15rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500; line-height: 84px; }
   .brand img { display: block; height: 84px; width: auto; }
-  nav { display: flex; gap: 1.75rem; align-items: center; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  nav { display: flex; gap: 2.25rem; align-items: center; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
   .top { color: var(--muted); padding: 0.4rem 0; display: inline-flex; } .top:hover, .top[aria-current='page'], .top.on { color: var(--fg); }
-  .w { display: block; overflow: visible; }
+  .w { display: block; overflow: visible; height: 24px; width: auto; }
+  @media (max-width: 560px) { .w { height: 18px; } }
   .w path { fill: currentColor; transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); transform-box: view-box; transform-origin: 0 0; }
   .top:hover .w path, .top[aria-current='page'] .w path, .top.on .w path, .dd:hover .w path, .dd:focus-within .w path { transform: var(--m); }
   .dd { position: relative; }
