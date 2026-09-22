@@ -29,6 +29,7 @@ titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
 works = {p: w for p, w in d.get('works', {}).items() if p in sel}
 orden = {k: [p for p in v if p in sel] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L)
+work_of = {p: w for p, w in d.get('workOf', {}).items() if p in sel and w}  # work elegido en catalogo/textos.html (slug de carpeta)
 print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
 pre = dict(sel)
@@ -97,3 +98,53 @@ print('web:', n, 'copias · portada:', len(portada), '· títulos:', len(web_tit
 for c in NAME.values():
     b = os.path.join(W, 'fotos', c)
     print(f'  {c}: {sum(len(x) for _, _, x in os.walk(b))} fotos en {len(os.listdir(b))} proyectos')
+
+# ---- WORKS: la foto elegida en textos.html se coloca (clon) en su carpeta fotos/works/<NN NOMBRE>; si estaba en otra, se quita
+import hashlib, unicodedata
+WORKS = os.path.join(W, 'fotos', 'works')
+def slugify(t):
+    t = unicodedata.normalize('NFD', t); t = ''.join(c for c in t if unicodedata.category(c) != 'Mn').lower()
+    return re.sub(r'^-|-$', '', re.sub(r'[^a-z0-9]+', '-', t))
+def sha(path):
+    h = hashlib.sha1()
+    with open(path, 'rb') as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b''): h.update(chunk)
+    return h.hexdigest()[:12]
+if work_of and os.path.isdir(WORKS):
+    folders = {}
+    for name in sorted(os.listdir(WORKS)):
+        if name.startswith('.') or not os.path.isdir(os.path.join(WORKS, name)): continue
+        m = re.match(r'^(\d+)\s*[-._]?\s*(.+)$', name); folders[slugify((m.group(2) if m else name).strip())] = name
+    # contenido actual de las carpetas (por sha), con caché
+    cache_p = os.path.join(CAT, 'works-sha.json')
+    cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
+    present = {}  # sha -> [(slug, path)]
+    for slug, name in folders.items():
+        for fn in os.listdir(os.path.join(WORKS, name)):
+            fp = os.path.join(WORKS, name, fn)
+            if fn.startswith('.') or not os.path.isfile(fp): continue
+            key = fp + '|' + str(os.path.getmtime(fp)) + '|' + str(os.path.getsize(fp))
+            h = cache.get(key) or sha(fp); cache[key] = h
+            present.setdefault(h, []).append((slug, fp))
+    json.dump(cache, open(cache_p, 'w'))
+    added = removed = 0; missing = set()
+    for p, slug in work_of.items():
+        if slug not in folders: missing.add(slug); continue
+        src = os.path.join(FOTO, p)
+        if not os.path.exists(src): continue
+        h = sha(src)
+        for s2, fp in present.get(h, []):
+            if s2 != slug: os.remove(fp); removed += 1
+        if not any(s2 == slug for s2, _ in present.get(h, [])):
+            parts = p.split('/'); proj = clean(parts[1]) if re.match(r'20\d\d$', parts[0]) and len(parts) > 2 else ' - '.join(parts[:min(len(parts) - 1, 3)])
+            proj = re.sub(r'^EQUIPO ANTERIOR - ', '', proj)
+            dest = os.path.join(WORKS, folders[slug], f"{proj} - {parts[-1]}")
+            subprocess.run(['cp', '-pc', src, dest]); added += 1
+            if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
+    # títulos también para las copias ya existentes en works
+    for p, t in titles.items():
+        src = os.path.join(FOTO, p)
+        if os.path.exists(src):
+            for s2, fp in present.get(sha(src), []): web_titles[os.path.relpath(fp, os.path.join(W, 'fotos'))] = t
+    json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
+    print('works: añadidas', added, '· quitadas', removed, ('· carpetas que no existen: ' + ', '.join(sorted(missing))) if missing else '')
