@@ -6,12 +6,14 @@ const { text, class: cls } = Astro.props;
 let t = 0;
 for (const ch of text) t = (t * 31 + ch.charCodeAt(0)) >>> 0;
 const rnd = () => { t = (Math.imul(t ^ (t >>> 15), 0x2c1b3c6d) + 0x1b873593) >>> 0; return (t >>> 8) / 16777216; };
-const letters = [...text].map((ch, i) => {
+const chars = [...text];
+const letters = chars.map((ch, i) => {
   if (ch === ' ') return { ch, m: '' };
-  const still = rnd() < 0.3; // algunas letras se quedan quietas, como en el menú
+  const edge = i === 0 || i === chars.length - 1; // primera y última: quietas y a la misma altura
+  const still = edge || rnd() < 0.3;
   const rot = still ? 0 : (rnd() * 2 - 1) * 16;
-  const dy = still ? 0 : (rnd() * 2 - 1) * 0.28;
-  const dx = (rnd() * 2 - 1) * 0.06;
+  const dy = still ? 0 : (rnd() * 2 - 1) * 0.12;
+  const dx = edge ? 0 : (rnd() * 2 - 1) * 0.03;
   return { ch, m: `translate(${dx.toFixed(3)}em, ${dy.toFixed(3)}em) rotate(${rot.toFixed(1)}deg)` };
 });
 ---

@@ -23,13 +23,16 @@ const t = useTranslations(lang);
 </Base>
 <style>
   .list { list-style: none; margin: 1rem 0 0; padding: 0; }
-  li { padding: 0.35rem 0; }
-  .work { display: inline-block; font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); line-height: 1.3; padding: 0.15em 0; }
+  li { padding: 0.15rem 0; }
+  .work { display: inline-block; font-size: clamp(1rem, 1.6vw, 1.3rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); line-height: 1.3; padding: 0.1em 0; }
   .work:hover, li.on .work { color: var(--fg); }
-  .strip { display: none; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 0.4rem 0 0.9rem; margin-top: 0.1rem; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
-  .strip img { display: block; height: 150px; width: auto; flex: 0 0 auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
-  li:hover .strip, li.on .strip { display: flex; }
-  @media (hover: none) { li:hover .strip { display: none; } li.on .strip { display: flex; } }
+  /* La fila se despliega con animación (altura + opacidad) en vez de aparecer de golpe */
+  .strip { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; max-height: 0; opacity: 0; padding: 0 0 0; scrollbar-width: thin; -webkit-overflow-scrolling: touch; transition: max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s, padding 0.45s; }
+  .strip img { display: block; height: 118px; width: auto; flex: 0 0 auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
+  li:hover .strip, li.on .strip { max-height: 160px; opacity: 1; padding: 0.3rem 0 0.6rem; }
+  /* Las letras se descolocan también mientras el cursor está sobre la fila de fotos */
+  li:hover :global(.l), li.on :global(.l) { transform: var(--m); }
+  @media (hover: none) { li:hover .strip { max-height: 0; opacity: 0; padding: 0; } li:hover :global(.l) { transform: none; } li.on .strip { max-height: 160px; opacity: 1; padding: 0.3rem 0 0.6rem; } li.on :global(.l) { transform: var(--m); } }
 </style>
 <script>
   // En táctil: el primer toque descoloca las letras y muestra la fila de fotos; el segundo abre el trabajo.
