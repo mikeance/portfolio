@@ -29,7 +29,7 @@ titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
 works = {p: w for p, w in d.get('works', {}).items() if p in sel}
 orden = {k: [p for p in v if p in sel] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L)
-work_of = {p: w for p, w in d.get('workOf', {}).items() if p in sel and w}  # work elegido en catalogo/textos.html (slug de carpeta)
+work_of = {p: w for p, w in d.get('workOf', {}).items() if p in sel}  # work elegido en catalogo/textos.html ('' = ninguno: se saca de las carpetas)
 print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
 pre = dict(sel)
@@ -129,13 +129,13 @@ if work_of and os.path.isdir(WORKS):
     json.dump(cache, open(cache_p, 'w'))
     added = removed = 0; missing = set()
     for p, slug in work_of.items():
-        if slug not in folders: missing.add(slug); continue
+        if slug and slug not in folders: missing.add(slug); continue
         src = os.path.join(FOTO, p)
         if not os.path.exists(src): continue
         h = sha(src)
         for s2, fp in present.get(h, []):
-            if s2 != slug: os.remove(fp); removed += 1
-        if not any(s2 == slug for s2, _ in present.get(h, [])):
+            if s2 != slug and os.path.exists(fp): os.remove(fp); removed += 1
+        if slug and not any(s2 == slug for s2, _ in present.get(h, [])):
             parts = p.split('/'); proj = clean(parts[1]) if re.match(r'20\d\d$', parts[0]) and len(parts) > 2 else ' - '.join(parts[:min(len(parts) - 1, 3)])
             proj = re.sub(r'^EQUIPO ANTERIOR - ', '', proj)
             dest = os.path.join(WORKS, folders[slug], f"{proj} - {parts[-1]}")
