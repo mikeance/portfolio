@@ -57,11 +57,18 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   .dd li { padding: 0.3rem 0; text-transform: none; letter-spacing: 0.02em; font-size: 0.85rem; }
   .dd li a { color: var(--muted); } .dd li a:hover, .dd li a[aria-current='page'] { color: var(--fg); }
   .soon { color: var(--muted); font-style: italic; }
-  /* Móvil: el desplegable ocupa el ancho del menú, justo debajo, y así nunca se sale de la pantalla */
-  @media (max-width: 560px) { header { flex-direction: column; } nav { gap: 1.1rem; flex-wrap: wrap; position: relative; } .dd { position: static; } .dd ul { left: 0; right: 0; top: 100%; min-width: 0; } }
+  /* Móvil: el desplegable, del ancho justo del texto, se abre bajo CONTACT; si no cabe a la derecha se ancla a la derecha (JS) */
+  @media (max-width: 560px) { header { flex-direction: column; } nav { gap: 1.1rem; flex-wrap: wrap; } .dd ul { left: 0; right: auto; min-width: 0; width: max-content; max-width: calc(100vw - 2 * var(--gutter)); } .dd ul.flip { left: auto; right: 0; } }
 </style>
 <script>
   // En táctil no hay "hover": el primer toque descoloca las letras y la navegación llega medio segundo después.
+  // Si el desplegable se saliera por la derecha de la pantalla, se ancla a la derecha de la palabra.
+  document.querySelectorAll<HTMLElement>('nav .dd').forEach((dd) => {
+    const ul = dd.querySelector('ul')!;
+    const fit = () => { ul.classList.remove('flip'); if (ul.getBoundingClientRect().right > document.documentElement.clientWidth - 4) ul.classList.add('flip'); };
+    const later = () => requestAnimationFrame(fit); // el desplegable aún no está visible cuando llega el evento
+    dd.addEventListener('focusin', later); dd.addEventListener('mouseenter', later); dd.addEventListener('click', later); dd.addEventListener('touchstart', later, { passive: true });
+  });
   document.querySelectorAll<HTMLAnchorElement>('nav a.top').forEach((a) => {
     a.addEventListener('touchend', (e) => {
       if (a.classList.contains('on')) return;
