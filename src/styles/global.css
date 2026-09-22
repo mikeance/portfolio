@@ -7,9 +7,9 @@
   --gutter: clamp(1rem, 4vw, 3rem);
 }
 * { box-sizing: border-box; }
-html { color-scheme: light; }
+html { color-scheme: light; overflow-x: hidden; }
 body {
-  margin: 0; background: var(--bg); color: var(--fg);
+  margin: 0; overflow-x: hidden; background: var(--bg); color: var(--fg);
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   line-height: 1.5; -webkit-font-smoothing: antialiased;
 }
