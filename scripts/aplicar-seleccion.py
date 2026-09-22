@@ -37,6 +37,7 @@ json.dump(pre, open(os.path.join(CAT, 'preseleccion.json'), 'w'), ensure_ascii=F
 json.dump(portada, open(os.path.join(CAT, 'portada.json'), 'w'), ensure_ascii=False)
 json.dump(titles, open(os.path.join(CAT, 'titulos.json'), 'w'), ensure_ascii=False)
 json.dump(works, open(os.path.join(CAT, 'works.json'), 'w'), ensure_ascii=False)
+json.dump(orden, open(os.path.join(CAT, 'orden.json'), 'w'), ensure_ascii=False)
 
 if '--no-ocultar' not in sys.argv:
     cat = json.load(open(os.path.join(CAT, 'catalogo.json')))['photos']

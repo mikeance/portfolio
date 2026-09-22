@@ -118,6 +118,7 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
 const summary = {
   works: WORKS.map((w) => ({ slug: w.slug, name: w.name })),
   ordenAuto: load(join(OUT, 'orden-auto.json'), {}),
+  ordenManual: load(join(OUT, 'orden.json'), {}),
   generado: new Date().toISOString(), carpeta: FOTO, imagenes: images.length, ocultas: hidden.size,
   duplicados_en_carpeta: dupFiles.length, otros_archivos: others.map((f) => f.path), con_error: photos.filter((p) => p.err).map((p) => [p.p, p.err]),
 };
