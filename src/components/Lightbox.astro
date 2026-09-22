@@ -13,8 +13,10 @@ const { closeLabel } = Astro.props;
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
   #lightbox img { max-width: 86vw; max-height: 88vh; object-fit: contain; cursor: pointer; }
-  #lb-prev, #lb-next { all: unset; position: absolute; top: 50%; transform: translateY(-50%); font-size: 3rem; line-height: 1; padding: 1rem; cursor: pointer; color: var(--muted); }
-  #lb-prev { left: 0.5rem; } #lb-next { right: 0.5rem; }
+  #lb-prev[hidden], #lb-next[hidden] { display: none; }
+  /* Flechas en los laterales, centradas en vertical */
+  #lb-prev, #lb-next { all: unset; position: fixed; top: 0; bottom: 0; width: 6vw; min-width: 44px; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; line-height: 1; cursor: pointer; color: var(--muted); }
+  #lb-prev { left: 0; } #lb-next { right: 0; }
   #lb-prev:hover, #lb-next:hover { color: var(--fg); }
   @media (max-width: 560px) { #lb-prev, #lb-next { display: none; } #lightbox img { max-width: 96vw; } }
   #lightbox p { position: absolute; bottom: 0.9rem; left: 0; right: 0; margin: 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); }

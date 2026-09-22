@@ -91,9 +91,12 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
     const lbTitle = lb.querySelector('p')!;
     const all = [...document.querySelectorAll<HTMLElement>('.grid figure')];
     let idx = -1;
+    const prevBtn = document.getElementById('lb-prev')!, nextBtn = document.getElementById('lb-next')!;
     const show = (i: number) => {
-      idx = (i + all.length) % all.length;
+      if (i < 0 || i >= all.length) return; // sin dar la vuelta: ni antes de la primera ni después de la última
+      idx = i;
       const fig = all[idx];
+      prevBtn.hidden = idx === 0; nextBtn.hidden = idx === all.length - 1;
       lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
       lbImg.alt = fig.dataset.title || '';
       lbTitle.textContent = fig.dataset.title || '';
@@ -106,7 +109,10 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
     });
     lb.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
-      if (t === lbImg || t.id === 'lb-next') show(idx + 1);
+      if (t === lbImg) { // mitad derecha de la foto: siguiente; mitad izquierda: anterior
+        const r = lbImg.getBoundingClientRect();
+        show(e.clientX - r.left > r.width / 2 ? idx + 1 : idx - 1);
+      } else if (t.id === 'lb-next') show(idx + 1);
       else if (t.id === 'lb-prev') show(idx - 1);
       else closeLb();
     });
