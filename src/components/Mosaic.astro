@@ -84,45 +84,53 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
   layoutAll();
   addEventListener('resize', layoutAll);
 
-  // Visor (uno por página, ver Lightbox.astro): clic en la foto o → = siguiente; ← = anterior; fuera o Esc = cerrar
+  // Visor (uno por página, ver Lightbox.astro): carrusel con scroll horizontal (dedo en móvil; flechas, teclado
+  // o clic en la mitad derecha/izquierda de la foto en escritorio). No da la vuelta al llegar al final.
   const lb = document.getElementById('lightbox');
   if (lb) {
-    const lbImg = lb.querySelector('img')!;
+    const track = document.getElementById('lb-track')!;
     const lbTitle = lb.querySelector('p')!;
-    const all = [...document.querySelectorAll<HTMLElement>('.grid figure')];
-    let idx = -1;
     const prevBtn = document.getElementById('lb-prev')!, nextBtn = document.getElementById('lb-next')!;
-    const show = (i: number) => {
-      if (i < 0 || i >= all.length) return; // sin dar la vuelta: ni antes de la primera ni después de la última
-      idx = i;
-      const fig = all[idx];
-      prevBtn.hidden = idx === 0; nextBtn.hidden = idx === all.length - 1;
-      lbImg.src = `/photos/${fig.dataset.id}-1600.webp`;
-      lbImg.alt = fig.dataset.title || '';
-      lbTitle.textContent = fig.dataset.title || '';
-      lb.hidden = false;
+    const all = [...document.querySelectorAll<HTMLElement>('.grid figure')];
+    const touch = matchMedia('(hover: none)').matches;
+    // una "diapositiva" por foto; la imagen se carga cuando está cerca
+    const slides = all.map((fig) => {
+      const d = document.createElement('div'); d.className = 'slide';
+      const img = document.createElement('img'); img.alt = fig.dataset.title || ''; img.dataset.src = `/photos/${fig.dataset.id}-1600.webp`; img.draggable = false;
+      d.appendChild(img); track.appendChild(d); return d;
+    });
+    let idx = -1;
+    const load = (i: number) => { for (const k of [i - 1, i, i + 1]) { const img = slides[k]?.querySelector('img'); if (img && !img.src) img.src = img.dataset.src!; } };
+    const sync = (i: number) => {
+      idx = i; load(i);
+      lbTitle.textContent = all[i].dataset.title || '';
+      prevBtn.hidden = i === 0; nextBtn.hidden = i === all.length - 1;
     };
-    const closeLb = () => { lb.hidden = true; lbImg.removeAttribute('src'); };
+    const goTo = (i: number, smooth = true) => {
+      if (i < 0 || i >= all.length) return;
+      sync(i);
+      track.scrollTo({ left: i * track.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+    };
+    const open = (i: number) => { lb.hidden = false; goTo(i, false); };
+    const closeLb = () => { lb.hidden = true; };
+    // al deslizar, la foto activa es la que queda centrada
+    let raf = 0;
+    track.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { const i = Math.round(track.scrollLeft / track.clientWidth); if (i !== idx && i >= 0 && i < all.length) sync(i); }); }, { passive: true });
+    addEventListener('resize', () => { if (!lb.hidden && idx >= 0) track.scrollTo({ left: idx * track.clientWidth }); });
     document.addEventListener('click', (e) => {
       const fig = (e.target as HTMLElement).closest('.grid figure') as HTMLElement | null;
-      if (fig) show(all.indexOf(fig));
+      if (fig) open(all.indexOf(fig));
     });
     lb.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
-      if (t === lbImg) { // mitad derecha de la foto: siguiente; mitad izquierda: anterior
-        const r = lbImg.getBoundingClientRect();
-        show(e.clientX - r.left > r.width / 2 ? idx + 1 : idx - 1);
-      } else if (t.id === 'lb-next') show(idx + 1);
-      else if (t.id === 'lb-prev') show(idx - 1);
+      if (t.tagName === 'IMG') { if (touch) return; const r = t.getBoundingClientRect(); goTo(e.clientX - r.left > r.width / 2 ? idx + 1 : idx - 1); }
+      else if (t.id === 'lb-next') goTo(idx + 1);
+      else if (t.id === 'lb-prev') goTo(idx - 1);
       else closeLb();
     });
-    // En móvil: deslizar a izquierda/derecha
-    let x0 = 0;
-    lb.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
-    lb.addEventListener('touchend', (e) => { const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) { show(dx < 0 ? idx + 1 : idx - 1); e.preventDefault(); } });
     addEventListener('keydown', (e) => {
       if (lb.hidden) return;
-      if (e.key === 'Escape') closeLb(); else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(idx + 1); } else if (e.key === 'ArrowLeft') show(idx - 1);
+      if (e.key === 'Escape') closeLb(); else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(idx + 1); } else if (e.key === 'ArrowLeft') goTo(idx - 1);
     });
   }
 </script>
