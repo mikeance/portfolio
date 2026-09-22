@@ -1,38 +1,45 @@
 ---
 import Base from '../layouts/Base.astro';
+import Scatter from '../components/Scatter.astro';
 import { localePath, useTranslations, type Lang } from '../i18n/ui';
 import { works } from '../lib/works';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
-const SHOW_WORKS = false;
 ---
 <Base lang={lang} path="/works" title={t('nav.works')}>
   <main class="wrap">
-    {/* WORKS en pausa: se muestra "Coming soon". Para reactivar, poner SHOW_WORKS = true aquí y en pages/works/[slug].astro */}
-    {!SHOW_WORKS && <p class="soon">{t('nav.soon')}</p>}
-    {SHOW_WORKS && <ul class="works">
+    <ul class="list">
       {works.map((w) => (
         <li>
-          <a href={localePath(lang, `/works/${w.slug}`)}>
-            <div class="four">
-              {w.cover.map((p) => <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" />)}
-            </div>
-            <h2>{w.name}</h2>
-          </a>
+          <a class="work" href={localePath(lang, `/works/${w.slug}`)}><Scatter text={w.name} /></a>
+          {/* Al pasar el cursor: fila horizontal (con scroll) de las fotos del trabajo */}
+          <div class="strip" aria-hidden="true">
+            {w.photos.map((p) => <img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} />)}
+          </div>
         </li>
       ))}
-    </ul>}
+    </ul>
   </main>
 </Base>
 <style>
-  .soon { font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 4rem 0; text-align: center; }
-  .works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem 1.25rem; }
-  @media (max-width: 1099px) { .works { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 799px) { .works { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 559px) { .works { grid-template-columns: 1fr; } }
-  /* Bloque de cada trabajo: cuadrícula de 4 fotos (recortadas al cuadrado) y nombre */
-  .four { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: var(--mat); }
-  .four img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
-  h2 { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin: 0.8rem 0 0; color: var(--fg); }
-  li a:hover h2 { color: var(--muted); }
+  .list { list-style: none; margin: 1rem 0 0; padding: 0; }
+  li { padding: 0.35rem 0; }
+  .work { display: inline-block; font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); line-height: 1.3; padding: 0.15em 0; }
+  .work:hover, li.on .work { color: var(--fg); }
+  .strip { display: none; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 0.4rem 0 0.9rem; margin-top: 0.1rem; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .strip img { display: block; height: 150px; width: auto; flex: 0 0 auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
+  li:hover .strip, li.on .strip { display: flex; }
+  @media (hover: none) { li:hover .strip { display: none; } li.on .strip { display: flex; } }
 </style>
+<script>
+  // En táctil: el primer toque descoloca las letras y muestra la fila de fotos; el segundo abre el trabajo.
+  document.querySelectorAll<HTMLLIElement>('.list li').forEach((li) => {
+    const a = li.querySelector('a')!;
+    a.addEventListener('touchend', (e) => {
+      if (li.classList.contains('on')) return;
+      e.preventDefault();
+      document.querySelectorAll('.list li.on').forEach((o) => o.classList.remove('on'));
+      li.classList.add('on');
+    }, { passive: false });
+  });
+</script>

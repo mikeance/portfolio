@@ -1,23 +1,18 @@
-import defs from '../data/works.json';
 import { photos, type Photo } from './photos';
 
-export interface Session { name: string; label: string; year: string; photos: Photo[] }
-export interface Work { slug: string; name: string; photos: Photo[]; sessions: Session[]; cover: Photo[] }
+/** WORKS se organiza desde el Finder: fotos/works/<NN NOMBRE>/fotos…
+ *  El número de la carpeta fija el orden de la lista; el nombre (sin número) es el título;
+ *  el orden de las fotos dentro es el alfabético de sus archivos. */
+export interface Work { slug: string; name: string; order: number; photos: Photo[] }
 
-/** "2024-07 SW Summer 24" -> etiqueta "SW Summer 24", año "2024" */
-const labelOf = (proj: string) => proj.replace(/^\d{4}-\d{2}\s*/, '').replace(/^EQUIPO ANTERIOR - /, '');
-const yearOf = (proj: string) => (proj.match(/^(\d{4})/) || [])[1] || '';
-
-export const works: Work[] = defs
-  .map((w) => {
-    const seen = new Set<string>();
-    const list = photos.filter((p) => p.works?.includes(w.slug) && p.sha && !seen.has(p.sha) && seen.add(p.sha));
-    const byProj = new Map<string, Photo[]>();
-    for (const p of list) byProj.set(p.proj || '', [...(byProj.get(p.proj || '') || []), p]);
-    // sesiones de más reciente a más antigua; las carpetas sin fecha (EQUIPO ANTERIOR…) al final
-    const key = (n: string) => (/^\d{4}-\d{2}/.test(n) ? '1' + n : '0' + n);
-    const sessions = [...byProj].sort((a, b) => key(b[0]).localeCompare(key(a[0]))).map(([name, ph]) => ({ name, label: labelOf(name), year: yearOf(name), photos: ph }));
-    const cover = sessions.flatMap((s) => s.photos).slice(0, 4);
-    return { slug: w.slug, name: w.name, photos: list, sessions, cover };
-  })
-  .filter((w) => w.photos.length > 0);
+const map = new Map<string, Work>();
+for (const p of photos) {
+  if (p.cat !== 'work' || !p.work) continue;
+  let w = map.get(p.work);
+  if (!w) { w = { slug: p.work, name: p.workName || p.work, order: p.workOrder ?? 999, photos: [] }; map.set(p.work, w); }
+  w.photos.push(p);
+}
+export const works: Work[] = [...map.values()]
+  .map((w) => ({ ...w, photos: w.photos.sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0)) }))
+  .filter((w) => w.photos.length > 0)
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));

@@ -6,12 +6,14 @@ export interface Photo {
   hue: number;
   sat: number;
   lum: number;
-  cat: 'faces' | 'editorial' | 'lifestyle' | 'home';
+  cat: 'faces' | 'editorial' | 'lifestyle' | 'home' | 'work';
   proj?: string;  // carpeta de sesión/proyecto dentro de fotos/<categoría>/
   src?: string;   // ruta relativa dentro de fotos/
   sha?: string;   // huella del contenido (para no repetir la misma foto)
   title?: string;
-  works?: string[];
+  work?: string;      // WORKS: slug de la carpeta fotos/works/<NN NOMBRE>
+  workName?: string;
+  workOrder?: number;
   face?: number;  // área de la cara mayor (0–1), solo en FACES
   faces?: number;
   ord?: number;   // posición manual fijada en el catálogo (Faces / Life)

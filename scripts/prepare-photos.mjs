@@ -1,7 +1,7 @@
 // Optimiza las fotos de /fotos y genera src/data/photos.json
 //   fotos/portrait | editorial | lifestyle      -> Fotografía
 //   fotos/portada                                -> Portada (orden manual)
-//   fotos/works.json  { "faces/Sesión/foto.jpg": ["scrapworld"] }  -> asignación manual a Works (si no, reglas de src/data/works.json)
+//   fotos/works/<NN NOMBRE>/                    -> Works (el número ordena la lista; el nombre es el título; las fotos, por nombre de archivo)
 // Uso: npm run photos   (se ejecuta solo antes de dev y build)
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
@@ -13,10 +13,9 @@ const SRC = join(ROOT, 'fotos');
 const OUT = join(ROOT, 'public/photos');
 const DATA = join(ROOT, 'src/data/photos.json');
 const CATS = ['faces', 'editorial', 'lifestyle', 'portada'];
-const WORKS = JSON.parse(readFileSync(join(ROOT, 'src/data/works.json'), 'utf8'));
-const manualWorks = existsSync(join(SRC, 'works.json')) ? JSON.parse(readFileSync(join(SRC, 'works.json'), 'utf8')) : {};
-const rx = (list) => (list || []).map((r) => new RegExp(r, 'i'));
-const worksFor = (rel) => manualWorks[rel] ?? WORKS.filter((w) => rx(w.match).some((r) => r.test(rel)) && !rx(w.exclude).some((r) => r.test(rel))).map((w) => w.slug);
+const slugify = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const workFolders = existsSync(join(SRC, 'works')) ? readdirSync(join(SRC, 'works')).filter((n) => !n.startsWith('.') && statSync(join(SRC, 'works', n)).isDirectory()).sort() : [];
+const workInfo = (folder) => { const m = folder.match(/^(\d+)\s*[-._]?\s*(.+)$/); const name = (m ? m[2] : folder).trim(); return { work: slugify(name), workName: name, workOrder: m ? +m[1] : 999 }; };
 const EXT = new Set(['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp']);
 
 // En Cloudflare no existen los originales (fotos/ no se sube): se usan las imágenes ya generadas en public/photos.
@@ -42,6 +41,7 @@ function* walk(dir) {
 function classify(file) {
   const [a, b] = relative(SRC, file).split('/');
   if (a === 'portada') { const m = (b || '').match(/^\d+_(.+?)__/); return { cat: 'home', proj: m ? m[1].replace(/_/g, ' ') : undefined }; }
+  if (a === 'works' && b && workFolders.includes(b)) { const files = readdirSync(join(SRC, 'works', b)).filter((n) => EXT.has(extname(n).toLowerCase())).sort(); return { cat: 'work', ...workInfo(b), ord: files.indexOf(relative(join(SRC, 'works', b), file)) }; }
   if (CATS.includes(a)) return { cat: a, proj: b };
   return null;
 }
@@ -58,16 +58,19 @@ function rgbToHsl(r, g, b) {
 
 const photos = [];
 const seenContent = new Set();
+const idBySha = new Map();
 let dupes = 0;
 for (const file of walk(SRC)) {
   const meta = classify(file);
   if (!meta) continue;
   // Misma foto (mismo contenido) dentro de la misma categoría/proyecto: solo una vez.
   const sha = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 12);
-  const key = meta.cat + ':' + sha;
+  const key = (meta.work || meta.cat) + ':' + sha;
   if (seenContent.has(key)) { dupes++; continue; }
   seenContent.add(key);
-  const id = createHash('sha1').update(relative(SRC, file)).digest('hex').slice(0, 10);
+  // Misma foto en varias carpetas: se reutiliza la imagen ya generada (id por contenido)
+  const id = idBySha.get(sha) ?? createHash('sha1').update(relative(SRC, file)).digest('hex').slice(0, 10);
+  idBySha.set(sha, id);
   const small = join(OUT, `${id}-800.webp`);
   const large = join(OUT, `${id}-1600.webp`);
   const base = sharp(file, { failOn: 'none' }).rotate();
@@ -85,8 +88,7 @@ for (const file of walk(SRC)) {
   const ratio = +(w / h).toFixed(4);
   const rel = relative(SRC, file);
   const title = titles[rel] || '';
-  const works = meta.cat === 'home' ? [] : worksFor(rel);
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(works.length ? { works } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

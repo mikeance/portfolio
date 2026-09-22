@@ -1,0 +1,24 @@
+---
+/** Texto cuyas letras se "descolocan" (giro + desplazamiento) al pasar el cursor, como las palabras del menú.
+ *  Las poses son fijas para cada texto (semilla), así siempre se descoloca igual. */
+interface Props { text: string; class?: string }
+const { text, class: cls } = Astro.props;
+let t = 0;
+for (const ch of text) t = (t * 31 + ch.charCodeAt(0)) >>> 0;
+const rnd = () => { t = (Math.imul(t ^ (t >>> 15), 0x2c1b3c6d) + 0x1b873593) >>> 0; return (t >>> 8) / 16777216; };
+const letters = [...text].map((ch, i) => {
+  if (ch === ' ') return { ch, m: '' };
+  const still = rnd() < 0.3; // algunas letras se quedan quietas, como en el menú
+  const rot = still ? 0 : (rnd() * 2 - 1) * 16;
+  const dy = still ? 0 : (rnd() * 2 - 1) * 0.28;
+  const dx = (rnd() * 2 - 1) * 0.06;
+  return { ch, m: `translate(${dx.toFixed(3)}em, ${dy.toFixed(3)}em) rotate(${rot.toFixed(1)}deg)` };
+});
+---
+<span class={`scatter ${cls ?? ''}`}>{letters.map((l) => (l.ch === ' ' ? <span class="sp"> </span> : <span class="l" style={`--m: ${l.m}`}>{l.ch}</span>))}</span>
+<style>
+  .scatter { display: inline-block; white-space: nowrap; }
+  .l { display: inline-block; transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 50% 60%; }
+  .sp { display: inline-block; width: 0.3em; }
+  :global(.on) > .scatter .l, :global(a:hover) > .scatter .l, :global(.scatter.now) .l { transform: var(--m); }
+</style>
