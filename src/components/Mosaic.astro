@@ -21,7 +21,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
   /* Texto de la foto: discreto, en gris, en la parte inferior; aparece al pasar el cursor */
-  figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.45rem 0.6rem 1.1rem; font-size: 0.7rem; letter-spacing: 0.04em; text-align: center; color: rgba(15, 15, 15, 0.92); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.45rem 0.6rem 0.78rem; font-size: 0.7rem; letter-spacing: 0.04em; text-align: center; color: rgba(15, 15, 15, 0.92); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   figcaption.light { color: rgba(255, 255, 255, 0.96); }
   figure:hover figcaption { opacity: 1; }
   @media (hover: none) { figcaption { display: none; } }
