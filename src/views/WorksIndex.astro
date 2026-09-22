@@ -14,7 +14,7 @@ const t = useTranslations(lang);
           <a class="work" href={localePath(lang, `/works/${w.slug}`)}><Scatter text={w.name} /></a>
           {/* Al pasar el cursor: fila horizontal (con scroll) de las fotos del trabajo */}
           <div class="strip" aria-hidden="true">
-            {w.photos.map((p) => <a href={localePath(lang, `/works/${w.slug}`)} tabindex="-1"><img src={`/photos/${p.id}-800.webp`} alt="" loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} /></a>)}
+            {w.photos.map((p) => <a href={localePath(lang, `/works/${w.slug}`)} tabindex="-1"><img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} />{p.title && <span class="cap">{p.title}</span>}</a>)}
           </div>
         </li>
       ))}
@@ -28,7 +28,9 @@ const t = useTranslations(lang);
   .work:hover, li.on .work { color: var(--fg); }
   /* La fila se despliega con animación (altura + opacidad) en vez de aparecer de golpe */
   .strip { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; max-height: 0; opacity: 0; padding: 0 0 0; scrollbar-width: thin; -webkit-overflow-scrolling: touch; transition: max-height 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, padding 0.9s; }
-  .strip a { flex: 0 0 auto; }
+  .strip a { flex: 0 0 auto; position: relative; }
+  .strip .cap { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.35rem 0.5rem; font-size: 0.65rem; letter-spacing: 0.04em; color: var(--muted); background: rgba(255, 255, 255, 0.82); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip a:hover .cap { opacity: 1; }
   .strip img { display: block; height: 231px; width: auto; flex: 0 0 auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
   li:hover .strip, li.on .strip { max-height: 290px; opacity: 1; padding: 0.3rem 0 0.6rem; }
   /* Las letras se descolocan también mientras el cursor está sobre la fila de fotos */
