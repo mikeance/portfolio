@@ -4,13 +4,19 @@ const { closeLabel } = Astro.props;
 ---
 <div id="lightbox" hidden>
   <button type="button" id="lb-close" aria-label={closeLabel}>×</button>
+  <button type="button" id="lb-prev" aria-label="Previous">‹</button>
   <img alt="" />
+  <button type="button" id="lb-next" aria-label="Next">›</button>
   <p></p>
 </div>
 <style>
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
-  #lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; }
+  #lightbox img { max-width: 86vw; max-height: 88vh; object-fit: contain; cursor: pointer; }
+  #lb-prev, #lb-next { all: unset; position: absolute; top: 50%; transform: translateY(-50%); font-size: 3rem; line-height: 1; padding: 1rem; cursor: pointer; color: var(--muted); }
+  #lb-prev { left: 0.5rem; } #lb-next { right: 0.5rem; }
+  #lb-prev:hover, #lb-next:hover { color: var(--fg); }
+  @media (max-width: 560px) { #lb-prev, #lb-next { display: none; } #lightbox img { max-width: 96vw; } }
   #lightbox p { position: absolute; bottom: 0.9rem; left: 0; right: 0; margin: 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); }
   #lb-close { all: unset; position: absolute; top: 1rem; right: 1.5rem; font-size: 2.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
 </style>
