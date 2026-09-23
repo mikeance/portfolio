@@ -68,6 +68,8 @@ def dest_for(p, c, prefix=''):
         return os.path.join(W, 'fotos', c, prefix + re.sub(r'\s+', '_', proj + '__' + rest))
     return os.path.join(W, 'fotos', c, proj, prefix + re.sub(r'\s+', '_', rest))
 
+prev_origen_p = os.path.join(W, 'fotos', 'origen.json')
+prev_on_web = set(json.load(open(prev_origen_p)).values()) if os.path.exists(prev_origen_p) else set()  # fotos que estaban en la web antes de este export
 n, seen, web_titles, web_works, origen = 0, set(), {}, {}, {}
 for p, ks in sel.items():
     src = os.path.join(FOTO, p)
@@ -154,10 +156,12 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
             dest = os.path.join(WORKS, folders[slug], f"{proj} - {parts[-1]}")
             subprocess.run(['cp', '-pc', src, dest]); added += 1
             if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
-    # fotos que ya no están en la web (descartadas ✕ o sin marcas): fuera también de todas las carpetas de works
-    sel_shas = {sha_of(os.path.join(FOTO, p)) for p in sel if os.path.exists(os.path.join(FOTO, p))}
+    # fotos que han dejado de estar en la web (descartadas ✕ o sin marcas): fuera también de todas las carpetas de works.
+    # Las que solo existen como archivos sueltos en works (nunca estuvieron en la web por el catálogo) no se tocan.
+    gone = (prev_on_web - set(sel)) | set(d.get('descartadas', []))
+    gone_shas = {sha_of(os.path.join(FOTO, p)) for p in gone if os.path.exists(os.path.join(FOTO, p))}
     for h, lst in present.items():
-        if h in sel_shas: continue
+        if h not in gone_shas: continue
         for s2, fp in lst:
             if os.path.exists(fp): os.remove(fp); removed += 1
     if added or removed: present = scan()
