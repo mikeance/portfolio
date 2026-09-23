@@ -4,5 +4,5 @@ export const site = {
   email: 'hola@mikeance.com',
   instagram: 'mikeance',
   // Laboratorio que revela y escanea los carretes (crédito en el pie)
-  lab: { name: 'Aulagalab', instagram: 'aulaga.lab' },
+  lab: { name: 'Aulagalab', instagram: 'aulagalab' },
 };
