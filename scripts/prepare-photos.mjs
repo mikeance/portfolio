@@ -27,6 +27,10 @@ mkdirSync(join(ROOT, 'src/data'), { recursive: true });
 // Orden manual por categoría: fotos/orden.json { "faces": ["faces/Sesión/foto.jpg", ...], "lifestyle": [...] }
 const orden = existsSync(join(SRC, 'orden.json')) ? JSON.parse(readFileSync(join(SRC, 'orden.json'), 'utf8')) : {};
 const ordIdx = {}; for (const [c, list] of Object.entries(orden)) list.forEach((rel, i) => { ordIdx[rel] = i; });
+// Orden manual de WORKS (editor del catálogo): fotos/orden-works.json { "scrapworld": [rutas], "scrapworld/spring22": [rutas], "kangol": [...] }
+//   clave sin "/" -> ordW (hover general del work y mosaico si no tiene colecciones); clave "work/colección" -> ordS (esa colección)
+const ordenW = existsSync(join(SRC, 'orden-works.json')) ? JSON.parse(readFileSync(join(SRC, 'orden-works.json'), 'utf8')) : {};
+const ordW = {}, ordS = {}; for (const [k, list] of Object.entries(ordenW)) list.forEach((rel, i) => { (k.includes('/') ? ordS : ordW)[rel] = i; });
 const titles = existsSync(join(SRC, 'titulos.json')) ? JSON.parse(readFileSync(join(SRC, 'titulos.json'), 'utf8')) : {};
 
 function* walk(dir) {
@@ -96,7 +100,7 @@ for (const file of walk(SRC)) {
   const ratio = +(w / h).toFixed(4);
   const rel = relative(SRC, file);
   const title = titles[rel] || '';
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), lumB: lumBottom, ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}) });
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), lum: +l.toFixed(3), lumB: lumBottom, ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}), ...(rel in ordW ? { ordW: ordW[rel] } : {}), ...(rel in ordS ? { ordS: ordS[rel] } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

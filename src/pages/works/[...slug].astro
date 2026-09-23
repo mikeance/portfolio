@@ -1,0 +1,14 @@
+---
+import WorkPage from '../../views/WorkPage.astro';
+import SectionPage from '../../views/SectionPage.astro';
+import { works } from '../../lib/works';
+export function getStaticPaths() {
+  const SHOW_WORKS = true;
+  return (SHOW_WORKS ? works : []).flatMap((w) => [
+    { params: { slug: w.slug }, props: { work: w } },
+    ...w.sections.map((s) => ({ params: { slug: `${w.slug}/${s.slug}` }, props: { work: w, section: s } })),
+  ]);
+}
+const { work, section } = Astro.props;
+---
+{section ? <SectionPage lang="en" work={work} section={section} /> : <WorkPage lang="en" work={work} />}

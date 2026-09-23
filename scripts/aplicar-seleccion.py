@@ -110,7 +110,12 @@ def sha(path):
     with open(path, 'rb') as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b''): h.update(chunk)
     return h.hexdigest()[:12]
-if work_of and os.path.isdir(WORKS):
+_sha_memo = {}
+def sha_of(path):
+    if path not in _sha_memo: _sha_memo[path] = sha(path)
+    return _sha_memo[path]
+orden_works = {k[2:]: v for k, v in orden.items() if k.startswith('W:')}  # orden manual de works/colecciones (editor del catálogo, 'W:<slug>')
+if (work_of or orden_works) and os.path.isdir(WORKS):
     folders = {}  # slug ('work' o 'work/seccion') -> ruta relativa a fotos/works
     def finfo(n):
         m = re.match(r'^(\d+)\s*[-._]?\s*(.+)$', n); return slugify((m.group(2) if m else n).strip())
@@ -123,21 +128,24 @@ if work_of and os.path.isdir(WORKS):
     # contenido actual de las carpetas (por sha), con caché
     cache_p = os.path.join(CAT, 'works-sha.json')
     cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
-    present = {}  # sha -> [(slug, path)]
-    for slug, name in folders.items():
-        for fn in os.listdir(os.path.join(WORKS, name)):
-            fp = os.path.join(WORKS, name, fn)
-            if fn.startswith('.') or not os.path.isfile(fp): continue
-            key = fp + '|' + str(os.path.getmtime(fp)) + '|' + str(os.path.getsize(fp))
-            h = cache.get(key) or sha(fp); cache[key] = h
-            present.setdefault(h, []).append((slug, fp))
-    json.dump(cache, open(cache_p, 'w'))
+    def scan():
+        present = {}  # sha -> [(slug, path)]
+        for slug, name in folders.items():
+            for fn in os.listdir(os.path.join(WORKS, name)):
+                fp = os.path.join(WORKS, name, fn)
+                if fn.startswith('.') or not os.path.isfile(fp): continue
+                key = fp + '|' + str(os.path.getmtime(fp)) + '|' + str(os.path.getsize(fp))
+                h = cache.get(key) or sha(fp); cache[key] = h
+                present.setdefault(h, []).append((slug, fp))
+        json.dump(cache, open(cache_p, 'w'))
+        return present
+    present = scan()
     added = removed = 0; missing = set()
     for p, slug in work_of.items():
         if slug and slug not in folders: missing.add(slug); continue
         src = os.path.join(FOTO, p)
         if not os.path.exists(src): continue
-        h = sha(src)
+        h = sha_of(src)
         for s2, fp in present.get(h, []):
             if s2 != slug and os.path.exists(fp): os.remove(fp); removed += 1
         if slug and not any(s2 == slug for s2, _ in present.get(h, [])):
@@ -146,10 +154,24 @@ if work_of and os.path.isdir(WORKS):
             dest = os.path.join(WORKS, folders[slug], f"{proj} - {parts[-1]}")
             subprocess.run(['cp', '-pc', src, dest]); added += 1
             if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
+    if added or removed: present = scan()
     # títulos también para las copias ya existentes en works
     for p, t in titles.items():
         src = os.path.join(FOTO, p)
         if os.path.exists(src):
-            for s2, fp in present.get(sha(src), []): web_titles[os.path.relpath(fp, os.path.join(W, 'fotos'))] = t
+            for s2, fp in present.get(sha_of(src), []): web_titles[os.path.relpath(fp, os.path.join(W, 'fotos'))] = t
     json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
-    print('works: añadidas', added, '· quitadas', removed, ('· carpetas que no existen: ' + ', '.join(sorted(missing))) if missing else '')
+    if work_of: print('works: añadidas', added, '· quitadas', removed, ('· carpetas que no existen: ' + ', '.join(sorted(missing))) if missing else '')
+    # orden manual de works / colecciones -> fotos/orden-works.json { slug: [rutas relativas a fotos/] }
+    web_ow = {}
+    for slug, lst in orden_works.items():
+        if slug not in folders: continue
+        paths = []
+        for p in lst:
+            src = os.path.join(FOTO, p)
+            if not os.path.exists(src): continue
+            for s2, fp in present.get(sha_of(src), []):
+                if s2 == slug or s2.startswith(slug + '/'): paths.append(os.path.relpath(fp, os.path.join(W, 'fotos')))
+        if paths: web_ow[slug] = paths
+    json.dump(web_ow, open(os.path.join(W, 'fotos', 'orden-works.json'), 'w'), ensure_ascii=False, indent=1)
+    if web_ow: print('orden works:', {k: len(v) for k, v in web_ow.items()})

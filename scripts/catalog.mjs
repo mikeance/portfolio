@@ -34,6 +34,17 @@ if (existsSync(WORKS_DIR)) for (const d of readdirSync(WORKS_DIR).filter((n) => 
 const workBySha = new Map(webPhotos.filter((p) => p.cat === 'work').map((p) => [p.sha, p.section ? p.work + '/' + p.section : p.work]));
 const wk1ByOrig = {};
 for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src] && workBySha.has(p.sha)) wk1ByOrig[origen[p.src]] = workBySha.get(p.sha);
+// Orden actual de cada work / colección en la web (para el editor de orden): rutas de FOTO vía sha de las copias de categoría
+const origBySha = new Map(); for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src]) origBySha.set(p.sha, origen[p.src]);
+const ordenAutoW = {};
+{
+  const wp = webPhotos.filter((p) => p.cat === 'work');
+  const key = (p) => p.section ? p.work + '/' + p.section : p.work;
+  const sorted = [...wp].sort((a, b) => (a.workOrder ?? 999) - (b.workOrder ?? 999) || (a.section ? 1 : 0) - (b.section ? 1 : 0) || (a.sectionOrder ?? 999) - (b.sectionOrder ?? 999) || (a.ord ?? 0) - (b.ord ?? 0));
+  // colecciones primero (por orden), sueltas al final — igual que src/lib/works.ts
+  const bySec = sorted.filter((p) => p.section), loose = sorted.filter((p) => !p.section);
+  for (const p of [...bySec, ...loose]) { const o = origBySha.get(p.sha); if (!o) continue; (ordenAutoW['W:' + p.work] ||= []).push(o); if (p.section) (ordenAutoW['W:' + key(p)] ||= []).push(o); }
+}
 const homeList = load(join(OUT, 'portada.json'), []); const home = new Map(homeList.map((p, i) => [p, i + 1]));
 const hidden = new Set(load(join(OUT, 'ocultas.json'), [])); // fotos que no se muestran en el catálogo (los archivos no se tocan)
 
@@ -127,7 +138,7 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
 
 const summary = {
   worksList,
-  ordenAuto: load(join(OUT, 'orden-auto.json'), {}),
+  ordenAuto: { ...load(join(OUT, 'orden-auto.json'), {}), ...ordenAutoW },
   ordenManual: load(join(OUT, 'orden.json'), {}),
   generado: new Date().toISOString(), carpeta: FOTO, imagenes: images.length, ocultas: hidden.size,
   duplicados_en_carpeta: dupFiles.length, otros_archivos: others.map((f) => f.path), con_error: photos.filter((p) => p.err).map((p) => [p.p, p.err]),

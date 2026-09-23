@@ -21,6 +21,8 @@ export interface Photo {
   face?: number;  // área de la cara mayor (0–1), solo en FACES
   faces?: number;
   ord?: number;   // posición manual fijada en el catálogo (Faces / Life)
+  ordW?: number;  // WORKS: posición manual en el work (hover general; y mosaico si no tiene colecciones)
+  ordS?: number;  // WORKS: posición manual dentro de su colección
 }
 
 export const photos = all as Photo[];

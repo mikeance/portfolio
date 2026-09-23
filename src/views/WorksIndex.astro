@@ -1,53 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
-import Scatter from '../components/Scatter.astro';
-import { localePath, useTranslations, type Lang } from '../i18n/ui';
+import WorkList from '../components/WorkList.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
 import { works } from '../lib/works';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
 ---
 <Base lang={lang} path="/works" title={t('nav.works')}>
   <main class="wrap">
-    <ul class="list">
-      {works.map((w) => (
-        <li>
-          <a class="work" href={localePath(lang, `/works/${w.slug}`)}><Scatter text={w.name} /></a>
-          {/* Al pasar el cursor: fila horizontal (con scroll) de las fotos del trabajo */}
-          <div class="strip" aria-hidden="true">
-            {w.photos.map((p) => <a href={localePath(lang, `/works/${w.slug}`)} tabindex="-1"><img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} />{p.title && <span class={`cap ${(p.lumB ?? p.lum) < 0.45 ? 'light' : ''}`}>{p.title}</span>}</a>)}
-          </div>
-        </li>
-      ))}
-    </ul>
+    <WorkList items={works} />
   </main>
 </Base>
-<style>
-  .list { list-style: none; margin: 1rem 0 0; padding: 0; }
-  li { padding: 0.15rem 0; }
-  .work { display: inline-block; font-size: clamp(1rem, 1.6vw, 1.3rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); line-height: 1.3; padding: 0.1em 0; }
-  .work:hover, li.on .work { color: var(--fg); }
-  /* La fila se despliega con animación (altura + opacidad) en vez de aparecer de golpe */
-  .strip { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; max-height: 0; opacity: 0; padding: 0 0 0; scrollbar-width: thin; -webkit-overflow-scrolling: touch; transition: max-height 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, padding 0.9s; }
-  .strip a { flex: 0 0 auto; position: relative; }
-  .strip .cap { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 0.35rem 0.5rem 0.65rem; font-size: 0.65rem; letter-spacing: 0.04em; text-align: center; color: rgba(15, 15, 15, 0.92); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .strip .cap.light { color: rgba(255, 255, 255, 0.96); }
-  .strip a:hover .cap { opacity: 1; }
-  .strip img { display: block; height: 231px; width: auto; flex: 0 0 auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
-  li:hover .strip, li.on .strip { max-height: 290px; opacity: 1; padding: 0.3rem 0 0.6rem; }
-  /* Las letras se descolocan también mientras el cursor está sobre la fila de fotos */
-  :global(.list .l) { transition-duration: 1s; }
-  li:hover :global(.l), li.on :global(.l) { transform: var(--m); }
-  @media (hover: none) { li:hover .strip { max-height: 0; opacity: 0; padding: 0; } li:hover :global(.l) { transform: none; } li.on .strip { max-height: 290px; opacity: 1; padding: 0.3rem 0 0.6rem; } li.on :global(.l) { transform: var(--m); } }
-</style>
-<script>
-  // En táctil: el primer toque descoloca las letras y muestra la fila de fotos; el segundo abre el trabajo.
-  document.querySelectorAll<HTMLLIElement>('.list li').forEach((li) => {
-    const a = li.querySelector('a')!;
-    a.addEventListener('touchend', (e) => {
-      if (li.classList.contains('on')) return;
-      e.preventDefault();
-      document.querySelectorAll('.list li.on').forEach((o) => o.classList.remove('on'));
-      li.classList.add('on');
-    }, { passive: false });
-  });
-</script>
