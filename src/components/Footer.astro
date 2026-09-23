@@ -3,8 +3,16 @@ import { useTranslations, type Lang } from '../i18n/ui';
 import { site } from '../data/site';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
+const ig = (h: string) => `https://www.instagram.com/${h}/`;
 ---
-<footer>© {new Date().getFullYear()} {site.name}. {t('footer.rights')}</footer>
+<footer>
+  <p>{t('footer.lab.before')}<a href={ig(site.lab.instagram)} target="_blank" rel="noopener">{site.lab.name}</a>{t('footer.lab.after')}</p>
+  <p>© {new Date().getFullYear()} <a href={ig(site.instagram)} target="_blank" rel="noopener">{site.name}</a>. {t('footer.rights')}</p>
+</footer>
 <style>
   footer { padding: 3rem var(--gutter); color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-align: center; }
+  footer p { margin: 0; }
+  footer p + p { margin-top: 0.5rem; }
+  footer a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; transition: color 0.3s, border-color 0.3s; }
+  footer a:hover { color: var(--fg); border-color: currentColor; }
 </style>

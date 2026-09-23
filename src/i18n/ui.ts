@@ -12,6 +12,8 @@ export const ui = {
     'contact.instagram': 'Instagram',
     'site.description': 'Photography portfolio by Miguel Antón.',
     'footer.rights': 'All rights reserved.',
+    'footer.lab.before': 'All film photographs developed and enlarged/scanned by ',
+    'footer.lab.after': ' in Madrid.',
     'lightbox.close': 'Close',
   },
 } as const;
