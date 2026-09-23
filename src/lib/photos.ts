@@ -15,6 +15,9 @@ export interface Photo {
   work?: string;      // WORKS: slug de la carpeta fotos/works/<NN NOMBRE>
   workName?: string;
   workOrder?: number;
+  section?: string;   // colección dentro del work (subcarpeta)
+  sectionName?: string;
+  sectionOrder?: number;
   face?: number;  // área de la cara mayor (0–1), solo en FACES
   faces?: number;
   ord?: number;   // posición manual fijada en el catálogo (Faces / Life)

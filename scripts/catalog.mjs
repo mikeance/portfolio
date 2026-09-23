@@ -23,8 +23,15 @@ const titles = load(join(OUT, 'titulos.json'), {});
 // Works: carpetas fotos/works/<NN NOMBRE>; el work actual de cada foto se deduce por contenido (sha) desde photos.json
 const webPhotos = load(join(ROOT, 'src/data/photos.json'), []);
 const origen = load(join(ROOT, 'fotos/origen.json'), {});
-const worksList = [...new Map(webPhotos.filter((p) => p.cat === 'work').sort((a, b) => (a.workOrder ?? 999) - (b.workOrder ?? 999)).map((p) => [p.work, { slug: p.work, name: p.workName }])).values()];
-const workBySha = new Map(webPhotos.filter((p) => p.cat === 'work').map((p) => [p.sha, p.work]));
+const slugify = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const folderInfo = (name) => { const m = name.match(/^(\d+)\s*[-._]?\s*(.+)$/); const n = (m ? m[2] : name).trim(); return { slug: slugify(n), name: n, order: m ? +m[1] : 999 }; };
+const WORKS_DIR = join(ROOT, 'fotos/works');
+const worksList = [];
+if (existsSync(WORKS_DIR)) for (const d of readdirSync(WORKS_DIR).filter((n) => !n.startsWith('.') && statSync(join(WORKS_DIR, n)).isDirectory()).sort()) {
+  const w = folderInfo(d); worksList.push({ slug: w.slug, name: w.name });
+  for (const sd of readdirSync(join(WORKS_DIR, d)).filter((n) => !n.startsWith('.') && statSync(join(WORKS_DIR, d, n)).isDirectory()).sort()) { const sec = folderInfo(sd); worksList.push({ slug: w.slug + '/' + sec.slug, name: w.name + ' › ' + sec.name }); }
+}
+const workBySha = new Map(webPhotos.filter((p) => p.cat === 'work').map((p) => [p.sha, p.section ? p.work + '/' + p.section : p.work]));
 const wk1ByOrig = {};
 for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src] && workBySha.has(p.sha)) wk1ByOrig[origen[p.src]] = workBySha.get(p.sha);
 const homeList = load(join(OUT, 'portada.json'), []); const home = new Map(homeList.map((p, i) => [p, i + 1]));

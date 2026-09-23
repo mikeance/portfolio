@@ -2,6 +2,7 @@
 //   fotos/portrait | editorial | lifestyle      -> Fotografía
 //   fotos/portada                                -> Portada (orden manual)
 //   fotos/works/<NN NOMBRE>/                    -> Works (el número ordena la lista; el nombre es el título; las fotos, por nombre de archivo)
+//   fotos/works/<NN NOMBRE>/<NN SECCIÓN>/       -> secciones (colecciones) dentro de un work, en ese orden
 // Uso: npm run photos   (se ejecuta solo antes de dev y build)
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
@@ -41,7 +42,13 @@ function* walk(dir) {
 function classify(file) {
   const [a, b] = relative(SRC, file).split('/');
   if (a === 'portada') { const m = (b || '').match(/^\d+_(.+?)__/); return { cat: 'home', proj: m ? m[1].replace(/_/g, ' ') : undefined }; }
-  if (a === 'works' && b && workFolders.includes(b)) { const files = readdirSync(join(SRC, 'works', b)).filter((n) => EXT.has(extname(n).toLowerCase())).sort(); return { cat: 'work', ...workInfo(b), ord: files.indexOf(relative(join(SRC, 'works', b), file)) }; }
+  if (a === 'works' && b && workFolders.includes(b)) {
+    const inWork = relative(join(SRC, 'works', b), file).split('/');
+    if (inWork.length === 1) { const files = readdirSync(join(SRC, 'works', b)).filter((n) => EXT.has(extname(n).toLowerCase())).sort(); return { cat: 'work', ...workInfo(b), ord: files.indexOf(inWork[0]) }; }
+    const sub = inWork[0], si = workInfo(sub);
+    const files = readdirSync(join(SRC, 'works', b, sub)).filter((n) => EXT.has(extname(n).toLowerCase())).sort();
+    return { cat: 'work', ...workInfo(b), section: si.work, sectionName: si.workName, sectionOrder: si.workOrder, ord: files.indexOf(inWork[1]) };
+  }
   if (CATS.includes(a)) return { cat: a, proj: b };
   return null;
 }

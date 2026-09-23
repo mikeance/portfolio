@@ -11,10 +11,22 @@ const t = useTranslations(lang);
 <Base lang={lang} path={`/works/${work.slug}`} title={work.name}>
   <main class="wrap">
     <h1><Scatter text={work.name} class="now" /></h1>
-    <Mosaic photos={work.photos} />
+    {work.sections.map((sec) => (
+      <section>
+        <h2>{sec.name}</h2>
+        <Mosaic photos={sec.photos} order="manual" />
+      </section>
+    ))}
+    {work.loose.length > 0 && (
+      <section>
+        <Mosaic photos={work.loose} order="manual" />
+      </section>
+    )}
   </main>
   <Lightbox closeLabel={t('lightbox.close')} />
 </Base>
 <style>
   h1 { font-size: clamp(1.2rem, 2.4vw, 1.8rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; margin: 0.6rem 0 1.6rem; }
+  section + section { margin-top: 3rem; }
+  h2 { font-size: 0.8rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0 0 1rem; }
 </style>

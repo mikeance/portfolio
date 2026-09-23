@@ -111,10 +111,15 @@ def sha(path):
         for chunk in iter(lambda: fh.read(1 << 20), b''): h.update(chunk)
     return h.hexdigest()[:12]
 if work_of and os.path.isdir(WORKS):
-    folders = {}
+    folders = {}  # slug ('work' o 'work/seccion') -> ruta relativa a fotos/works
+    def finfo(n):
+        m = re.match(r'^(\d+)\s*[-._]?\s*(.+)$', n); return slugify((m.group(2) if m else n).strip())
     for name in sorted(os.listdir(WORKS)):
         if name.startswith('.') or not os.path.isdir(os.path.join(WORKS, name)): continue
-        m = re.match(r'^(\d+)\s*[-._]?\s*(.+)$', name); folders[slugify((m.group(2) if m else name).strip())] = name
+        folders[finfo(name)] = name
+        for sub in sorted(os.listdir(os.path.join(WORKS, name))):
+            if sub.startswith('.') or not os.path.isdir(os.path.join(WORKS, name, sub)): continue
+            folders[finfo(name) + '/' + finfo(sub)] = os.path.join(name, sub)
     # contenido actual de las carpetas (por sha), con caché
     cache_p = os.path.join(CAT, 'works-sha.json')
     cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
