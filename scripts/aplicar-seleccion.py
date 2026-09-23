@@ -28,7 +28,7 @@ for k, v in d['seleccion'].items():
 titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
 works = {p: w for p, w in d.get('works', {}).items() if p in sel}
-orden = {k: [p for p in v if p in sel] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L)
+orden = {k: [p for p in v if p in sel or k.startswith('W:')] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L) / works (W:, pueden incluir fotos que solo existen en works)
 work_of = {p: w for p, w in d.get('workOf', {}).items() if p in sel}  # work elegido en catalogo/textos.html ('' = ninguno: se saca de las carpetas)
 print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
