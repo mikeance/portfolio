@@ -34,6 +34,7 @@ if (existsSync(WORKS_DIR)) for (const d of readdirSync(WORKS_DIR).filter((n) => 
 const workBySha = new Map(webPhotos.filter((p) => p.cat === 'work').map((p) => [p.sha, p.section ? p.work + '/' + p.section : p.work]));
 const wk1ByOrig = {};
 for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src] && workBySha.has(p.sha)) wk1ByOrig[origen[p.src]] = workBySha.get(p.sha);
+const chByOrig = {}; for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src] && p.chroma !== undefined) chByOrig[origen[p.src]] = p.chroma;
 // Orden actual de cada work / colección en la web (para el editor de orden): rutas de FOTO vía sha de las copias de categoría
 const origBySha = new Map(); for (const p of webPhotos) if (p.cat !== 'work' && p.cat !== 'home' && origen[p.src]) origBySha.set(p.sha, origen[p.src]);
 const ordenAutoW = {};
@@ -133,7 +134,7 @@ const photos = images.filter((f) => !hidden.has(f.path)).map((f) => {
   if (o.lum > 0.94) fl.push('clara');
   if (o.sharp < p10) fl.push('borrosa');
   if (similar.has(f.path)) fl.push('similar');
-  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0, t: titles[f.path] || '', md: existsSync(join(MED, o.id + '.jpg')) ? 1 : 0, wk1: wk1ByOrig[f.path] || '' };
+  return { id: o.id, p: f.path, w: o.w, h: o.h, f: fl, s: pre[f.path] || '', hm: home.get(f.path) || 0, t: titles[f.path] || '', md: existsSync(join(MED, o.id + '.jpg')) ? 1 : 0, wk1: wk1ByOrig[f.path] || '', ch: chByOrig[f.path] ?? -1 };
 });
 
 const summary = {
