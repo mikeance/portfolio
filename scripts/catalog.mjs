@@ -141,6 +141,7 @@ const summary = {
   worksList,
   ordenAuto: { ...load(join(OUT, 'orden-auto.json'), {}), ...ordenAutoW },
   ordenManual: load(join(OUT, 'orden.json'), {}),
+  lista: load(join(OUT, 'lista.json'), []),  // lista de revisión (catalogo/lista.json): vista «Lista» en index.html
   generado: new Date().toISOString(), carpeta: FOTO, imagenes: images.length, ocultas: hidden.size,
   duplicados_en_carpeta: dupFiles.length, otros_archivos: others.map((f) => f.path), con_error: photos.filter((p) => p.err).map((p) => [p.p, p.err]),
 };
