@@ -8,6 +8,6 @@ const t = useTranslations(lang);
 ---
 <Base lang={lang} path="/works" title={t('nav.works')}>
   <main class="wrap">
-    <WorkList items={works} />
+    <WorkList items={works.map((w) => ({ name: w.name, href: w.href, photos: w.strip }))} />
   </main>
 </Base>

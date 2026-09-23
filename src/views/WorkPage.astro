@@ -14,7 +14,7 @@ const asList = work.sections.length > 0;
 <Base lang={lang} path={work.href} title={work.name}>
   <main class="wrap">
     <h1><Scatter text={work.name} class="now" /></h1>
-    {asList ? <WorkList items={work.sections} /> : <Mosaic photos={work.photos} order="manual" />}
+    {asList ? <WorkList items={work.sections.map((s) => ({ name: s.name, href: s.href, photos: s.strip }))} /> : <Mosaic photos={work.photos} order="manual" />}
   </main>
   {!asList && <Lightbox closeLabel={t('lightbox.close')} />}
 </Base>
