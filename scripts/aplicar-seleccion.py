@@ -154,6 +154,12 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
             dest = os.path.join(WORKS, folders[slug], f"{proj} - {parts[-1]}")
             subprocess.run(['cp', '-pc', src, dest]); added += 1
             if p in titles: web_titles[os.path.relpath(dest, os.path.join(W, 'fotos'))] = titles[p]
+    # fotos que ya no están en la web (descartadas ✕ o sin marcas): fuera también de todas las carpetas de works
+    sel_shas = {sha_of(os.path.join(FOTO, p)) for p in sel if os.path.exists(os.path.join(FOTO, p))}
+    for h, lst in present.items():
+        if h in sel_shas: continue
+        for s2, fp in lst:
+            if os.path.exists(fp): os.remove(fp); removed += 1
     if added or removed: present = scan()
     # títulos también para las copias ya existentes en works
     for p, t in titles.items():
