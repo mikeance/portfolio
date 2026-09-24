@@ -5,6 +5,7 @@
 # Uso: python3 scripts/orden-editorial.py <export base.json> <salida.json> [semilla] [--mantener-primera]
 #        [--mantener=1,2,6]  conserva las fotos que ahora ocupan esas posiciones del orden base
 #        [--poner=9:PaulaVerano22-47.jpg ...]  pone la foto cuyo archivo termina así en esa posición
+#        [--contraste=1.5]  peso de la mezcla de contrastes con las vecinas (viveza del color, tono, luz, persona/detalle)
 # Escribe orden['E'] (rutas de FOTO) en la salida; se aplica con aplicar-seleccion.py como cualquier export.
 import json, math, random, re, sys
 
@@ -15,6 +16,7 @@ random.seed(int(args[0]) if args else 5)
 KEEP_FIRST = '--mantener-primera' in sys.argv
 MANTENER = [int(x) for a in sys.argv if a.startswith('--mantener=') for x in a.split('=', 1)[1].split(',') if x]
 PONER = [(int(a.split('=', 1)[1].split(':', 1)[0]), a.split(':', 1)[1]) for a in sys.argv if a.startswith('--poner=')]
+W_CONTRASTE = next((float(a.split('=', 1)[1]) for a in sys.argv if a.startswith('--contraste=')), 1.5)
 
 d = json.load(open(BASE))
 photos = json.load(open(f'{ROOT}/src/data/photos.json'))
@@ -25,6 +27,8 @@ faces = json.load(open(f'{ROOT}/src/data/faces.json'))
 try: contraste = json.load(open(f'{ROOT}/catalogo/contraste.json'))   # desviación de luminancia (0–1)
 except FileNotFoundError: contraste = {}
 flags = {x['p']: x.get('f', []) for x in json.load(open(f'{ROOT}/catalogo/catalogo.json'))['photos']}
+try: color = json.load(open(f'{ROOT}/catalogo/color-editorial.json'))   # huella de tono (12 tramos + neutro) y viveza
+except FileNotFoundError: color = {}
 
 MEJORES = range(2021, 2024)   # años fuertes
 FUTBOL = re.compile(r'Adidas Real Madrid')
@@ -62,7 +66,9 @@ for p in d['seleccion']['E']:
     c = cache.get(p, {})
     who = w.get('title', '').split(' · ')[0].strip() if ' · ' in w.get('title', '') else ''
     if not es_persona(who): who = ''
-    rows.append(dict(p=p, s=session(p), who=who, y=year(p, w), title=w.get('title', ''), close=faces.get(w['id'], {}).get('max', 0) >= 0.04,
+    cw = color.get(w['id'], {})
+    rows.append(dict(p=p, s=session(p), who=who, y=year(p, w), hist=cw.get('h', [0] * 12 + [1]), cf=cw.get('cf', 0.4),
+                     person=faces.get(w['id'], {}).get('n', 0) > 0, title=w.get('title', ''), close=faces.get(w['id'], {}).get('max', 0) >= 0.04,
                      bw=w.get('chroma', 1) < BW_MAX, lum=w.get('lum', 0.5), hue=w.get('hue', 0),
                      sat=w.get('sat', 0), wide=w.get('ratio', 1) > 1.15,
                      sharp=math.log(max(c.get('sharp', 1), 1)), expo=-abs(w.get('lum', 0.5) - 0.5),
@@ -89,6 +95,21 @@ N = len(rows); bw_rows = [r for r in rows if r['bw']]; n_bw = len(bw_rows)
 # posiciones objetivo del blanco y negro, repartidas por toda la página (empezando pronto, no en la primera)
 bw_slots = [round((k + 0.6) * N / n_bw) for k in range(n_bw)] if n_bw else []
 
+def contraste(a, b):
+    # lo que gusta: vivo junto a apagado (o blanco y negro), tonos distintos, luz distinta, persona junto a detalle
+    tono = 1 - sum(min(x, y) for x, y in zip(a['hist'], b['hist']))
+    return (0.35 * min(1, abs(a['cf'] - b['cf']) / 0.3) + 0.3 * tono
+            + 0.15 * min(1, abs(a['lum'] - b['lum']) * 2.5) + 0.2 * (a['person'] != b['person']))
+
+def mezcla(r, out):
+    # vecina de al lado (la anterior), la de dos antes y las que suelen quedar encima en el mosaico (3–5 antes)
+    if not out: return 0
+    v = contraste(r, out[-1])
+    if len(out) > 1: v += 0.6 * contraste(r, out[-2])
+    arriba = [contraste(r, x) for x in out[-5:-2]]
+    if arriba: v += 0.4 * sum(arriba) / len(arriba)
+    return v
+
 def penalty(r, out, left):
     i = len(out); pen = 0.0
     # urgencia: las sesiones con muchas fotos pendientes se adelantan un poco para no acabar amontonadas al final
@@ -101,7 +122,7 @@ def penalty(r, out, left):
     if out:
         prev = out[-1]
         dh = min(abs(r['hue'] - prev['hue']), 360 - abs(r['hue'] - prev['hue']))
-        if abs(r['lum'] - prev['lum']) < 0.07 and dh < 25: pen += 1.2          # romper degradados de color/luz
+        pen -= W_CONTRASTE * mezcla(r, out)                                    # mezcla de contrastes con las vecinas
         if r['wide'] and any(x['wide'] for x in out[-2:]): pen += 1.5          # horizontales separadas
         if r['close'] == prev['close']: pen += 0.5                              # alternar retrato / plano abierto
     return pen
@@ -157,6 +178,10 @@ top_rep = sum(1 for r in out[:TOP_PORTADA] if posH.get(r['p'], 1e9) < TOP_PORTAD
 pairs = sum(1 for a, b in zip(out, out[1:]) if a['p'] in posH and b['p'] in posH and abs(posH[a['p']] - posH[b['p']]) <= VECINAS)
 print(f'{N} fotos · B/N {n_bw} en posiciones {[k + 1 for k, r in enumerate(out) if r["bw"]]}')
 print('fijas:', {k + 1: out[k]['p'].split('/')[-1] for k in sorted(forced)})
+cm = lambda a, b: sum(contraste(out[i], out[i + 1]) for i in range(a, b - 1)) / (b - a - 1)
+cv = lambda a, b: sum(contraste(out[i], out[i + 4]) for i in range(a, b - 4)) / (b - a - 4)
+print(f'contraste con la de al lado: 1-60 {cm(0, 60):.3f} · toda {cm(0, N):.3f} · con la de encima (≈4 antes): 1-60 {cv(0, 60):.3f}')
+print(f'viveza alternada (|Δ| media 1-60): {sum(abs(out[i]["cf"] - out[i + 1]["cf"]) for i in range(59)) / 59:.3f}')
 print(f'calidad media 1-60: nitidez {sum(r["zsharp"] for r in out[:60]) / 60:+.2f} · contraste {sum(r["zcontrast"] for r in out[:60]) / 60:+.2f} · con aviso {sum(r["flag"] for r in out[:60])} · baja resolución {sum(r["res"] < 1600 for r in out[:60])}')
 for a, b in ((0, 30), (30, 100), (100, 200), (200, N)):
     blk = out[a:b]; yy = [r['y'] for r in blk]
