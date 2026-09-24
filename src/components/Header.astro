@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { localePath, useTranslations, type Lang } from '../i18n/ui';
 import { categories } from '../lib/photos';
 import { site } from '../data/site';
-import menu from '../data/menu.json';
+import menuSvg from '../data/menu.json';
+import menuExtra from '../data/menu-extra.json';   // ABOUT (misma tipografía, scripts/menu-extra.mjs)
+const menu = [...menuSvg, ...menuExtra];
 const word = (key: string) => menu.find((w) => w.key === key)!;
 const H = 18; // alto de las palabras en px (navegador); en móvil se reduce por CSS
 interface Props { lang: Lang; current: string }
@@ -25,6 +27,9 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
     <a class="top" href={localePath(lang, '/works')} aria-current={current.startsWith('/works') ? 'page' : undefined} aria-label={t('nav.works')}>
       <svg class="w" viewBox={word('works').vb.join(' ')} height={H} width={+(H * word('works').vb[2] / word('works').vb[3]).toFixed(1)} aria-hidden="true">{word('works').letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
     </a>
+    <a class="top" href={localePath(lang, '/about')} aria-current={current === '/about' ? 'page' : undefined} aria-label={t('nav.about')}>
+      <svg class="w" viewBox={word('about').vb.join(' ')} height={H} width={+(H * word('about').vb[2] / word('about').vb[3]).toFixed(1)} aria-hidden="true">{word('about').letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
+    </a>
     <div class="dd">
       <button type="button" aria-haspopup="true" aria-label={t('nav.contact')}>
         <svg class="w" viewBox={word('contact').vb.join(' ')} height={H} width={+(H * word('contact').vb[2] / word('contact').vb[3]).toFixed(1)} aria-hidden="true">{word('contact').letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
@@ -32,7 +37,6 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
       <ul>
         <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
         <li><a href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener">Instagram · @{site.instagram}</a></li>
-        <li><a href={localePath(lang, '/about')} aria-current={current === '/about' ? 'page' : undefined}>{t('nav.about')}</a></li>
       </ul>
     </div>
   </nav>
