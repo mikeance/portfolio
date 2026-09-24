@@ -3,6 +3,8 @@
 # Prioriza lo mejor: 2021–2023 (año del texto de la foto), más los futbolistas de Adidas & Real Madrid y algunos
 # retratos del Spot de Scrapworld; el resto de años baja sin desaparecer. Con --mantener-primera conserva la foto 1.
 # Uso: python3 scripts/orden-editorial.py <export base.json> <salida.json> [semilla] [--mantener-primera]
+#        [--mantener=1,2,6]  conserva las fotos que ahora ocupan esas posiciones del orden base
+#        [--poner=9:PaulaVerano22-47.jpg ...]  pone la foto cuyo archivo termina así en esa posición
 # Escribe orden['E'] (rutas de FOTO) en la salida; se aplica con aplicar-seleccion.py como cualquier export.
 import json, math, random, re, sys
 
@@ -11,6 +13,8 @@ BASE, OUT = sys.argv[1], sys.argv[2]
 args = [a for a in sys.argv[3:] if not a.startswith('--')]
 random.seed(int(args[0]) if args else 5)
 KEEP_FIRST = '--mantener-primera' in sys.argv
+MANTENER = [int(x) for a in sys.argv if a.startswith('--mantener=') for x in a.split('=', 1)[1].split(',') if x]
+PONER = [(int(a.split('=', 1)[1].split(':', 1)[0]), a.split(':', 1)[1]) for a in sys.argv if a.startswith('--poner=')]
 
 d = json.load(open(BASE))
 photos = json.load(open(f'{ROOT}/src/data/photos.json'))
@@ -18,14 +22,21 @@ origen = json.load(open(f'{ROOT}/fotos/origen.json'))       # ruta web -> ruta F
 cache = json.load(open(f'{ROOT}/catalogo/cache.json'))      # ruta FOTO -> nitidez, etc.
 web = {origen[p['src']]: p for p in photos if p['cat'] == 'editorial' and p.get('src') in origen}
 faces = json.load(open(f'{ROOT}/src/data/faces.json'))
+try: contraste = json.load(open(f'{ROOT}/catalogo/contraste.json'))   # desviación de luminancia (0–1)
+except FileNotFoundError: contraste = {}
+flags = {x['p']: x.get('f', []) for x in json.load(open(f'{ROOT}/catalogo/catalogo.json'))['photos']}
 
 MEJORES = range(2021, 2024)   # años fuertes
 FUTBOL = re.compile(r'Adidas Real Madrid')
 FUTBOLISTAS = re.compile(r'^(Vini|Eder|Real Madrid)')   # textos con jugadores (no los detalles «Madrid, 2024»)
 SPOT = re.compile(r'Spot SW')
 N_SPOT = 5                    # cuántos retratos del Spot suben
-SLOTS_FUTBOL = [6, 24, 47]    # posiciones reservadas (1 = primera) para los futbolistas más nítidos
+SLOTS_FUTBOL = [24, 47]       # posiciones reservadas (1 = primera) para los futbolistas más nítidos
 SLOTS_SPOT = [13, 36, 58]     # y para los retratos del Spot más nítidos
+
+NO_PERSONA = re.compile(r'\d| x |SW|Scrap|Galag|Summer|Spring|Archive|Mini|Room|Madrid|Sew|Zalando|Coffee|Calitos|Fitzgerald|Keychain', re.I)
+def es_persona(who):
+    return bool(who) and not NO_PERSONA.search(who)
 
 def year(p, w):
     m = re.search(r'(20\d\d)\s*$', w.get('title', ''))
@@ -50,15 +61,18 @@ for p in d['seleccion']['E']:
     if not w or p in d.get('descartadas', []): continue
     c = cache.get(p, {})
     who = w.get('title', '').split(' · ')[0].strip() if ' · ' in w.get('title', '') else ''
+    if not es_persona(who): who = ''
     rows.append(dict(p=p, s=session(p), who=who, y=year(p, w), title=w.get('title', ''), close=faces.get(w['id'], {}).get('max', 0) >= 0.04,
                      bw=w.get('chroma', 1) < BW_MAX, lum=w.get('lum', 0.5), hue=w.get('hue', 0),
                      sat=w.get('sat', 0), wide=w.get('ratio', 1) > 1.15,
-                     sharp=math.log(max(c.get('sharp', 1), 1)), expo=-abs(w.get('lum', 0.5) - 0.5)))
+                     sharp=math.log(max(c.get('sharp', 1), 1)), expo=-abs(w.get('lum', 0.5) - 0.5),
+                     contrast=contraste.get(w['id'], 0.2), res=min(c.get('w', 3000), c.get('h', 3000)),
+                     flag=any(f in ('borrosa', 'oscura', 'baja') for f in flags.get(p, []))))
 
 def z(k):
     v = [r[k] for r in rows]; m = sum(v) / len(v); sd = (sum((x - m) ** 2 for x in v) / len(v)) ** 0.5 or 1
     for r in rows: r['z' + k] = (r[k] - m) / sd
-for k in ('sharp', 'sat', 'expo'): z(k)
+for k in ('sharp', 'sat', 'expo', 'contrast'): z(k)
 # retratos del Spot que suben: los más nítidos
 spot_up = {r['p'] for r in sorted([r for r in rows if SPOT.search(r['p']) and r['close']], key=lambda r: -r['zsharp'])[:N_SPOT]}
 for r in rows:
@@ -66,7 +80,10 @@ for r in rows:
     if FUTBOL.search(r['p']) and FUTBOLISTAS.search(r['title']): boost = 1.3
     if r['p'] in spot_up: boost = 1.3
     r['boost'] = boost
-    r['score'] = 0.55 * r['zsharp'] + 0.1 * r['zsat'] + 0.15 * r['zexpo'] + boost + random.gauss(0, 0.5)
+    calidad = 0.6 * r['zsharp'] + 0.15 * r['zcontrast'] + 0.1 * r['zsat'] + 0.1 * r['zexpo']
+    if r['res'] < 1600: calidad -= 1.0          # poca resolución
+    if r['flag']: calidad -= 1.0                # borrosa / oscura / baja según el catálogo
+    r['score'] = calidad + boost + random.gauss(0, 0.3)
 
 N = len(rows); bw_rows = [r for r in rows if r['bw']]; n_bw = len(bw_rows)
 # posiciones objetivo del blanco y negro, repartidas por toda la página (empezando pronto, no en la primera)
@@ -78,7 +95,7 @@ def penalty(r, out, left):
     pen -= 14.0 * left[r['s']] / max(1, len(rows) - i)
     recent = out[-VENTANA_SESION:]
     if any(x['s'] == r['s'] for x in recent): pen += 6.0                       # sesión repetida cerca
-    if r['who'] and any(x['who'] == r['who'] for x in out[-VENTANA_PERSONA:]): pen += 4.0   # misma persona cerca
+    if r['who'] and any(x['who'] == r['who'] for x in out[-VENTANA_PERSONA:]): pen += 9.0   # misma persona cerca
     if i < TOP_PORTADA and posH.get(r['p'], 1e9) < TOP_PORTADA: pen += 2.5     # no abrir igual que la portada
     if out and r['p'] in posH and out[-1]['p'] in posH and abs(posH[r['p']] - posH[out[-1]['p']]) <= VECINAS: pen += 3.0
     if out:
@@ -97,8 +114,18 @@ for r in rows: left[r['s']] = left.get(r['s'], 0) + 1
 futbolistas = sorted([r for r in rows if FUTBOL.search(r['p']) and FUTBOLISTAS.search(r['title'])], key=lambda r: -r['zsharp'])
 spots = sorted([r for r in rows if r['p'] in spot_up], key=lambda r: -r['zsharp'])
 forced = {}
-for slot, r in zip(SLOTS_FUTBOL, futbolistas): forced[slot - 1] = r
-for slot, r in zip(SLOTS_SPOT, spots): forced[slot - 1] = r
+base_E = d.get('orden', {}).get('E', [])
+byp = {r['p']: r for r in rows}
+for pos in MANTENER:                                   # fotos que se quedan donde están
+    if pos - 1 < len(base_E) and base_E[pos - 1] in byp: forced[pos - 1] = byp[base_E[pos - 1]]
+for pos, fin in PONER:                                 # fotos que se colocan a mano
+    r = next((r for r in rows if r['p'].endswith(fin)), None)
+    if r: forced[pos - 1] = r
+ya = {id(r) for r in forced.values()}
+futbolistas = [r for r in futbolistas if id(r) not in ya]; spots = [r for r in spots if id(r) not in ya]
+libres = lambda slots: [s for s in slots if s - 1 not in forced]
+for slot, r in zip(libres(SLOTS_FUTBOL), futbolistas): forced[slot - 1] = r
+for slot, r in zip(libres(SLOTS_SPOT), spots): forced[slot - 1] = r
 if KEEP_FIRST and d.get('orden', {}).get('E'):
     first = next((r for r in rows if r['p'] == d['orden']['E'][0]), None)
     if first:
@@ -112,7 +139,8 @@ while rem_bw or rem_col:
     recent = {x['s'] for x in out[-VENTANA_SESION:]}
     due = bw_slots and i >= bw_slots[n_bw - len(rem_bw)] if rem_bw else False
     # el blanco y negro entra cuando le toca, salvo que su sesión acabe de salir (entonces espera un poco)
-    use_bw = rem_bw and (not rem_col or (due and any(r['s'] not in recent for r in rem_bw)))
+    free_bw = [r for r in rem_bw if id(r) not in {id(x) for x in forced.values()}]
+    use_bw = free_bw and (not rem_col or (due and any(r['s'] not in recent for r in free_bw)))
     pool = rem_bw if use_bw else rem_col
     reserved = {id(r) for r in forced.values()}
     cand = [r for r in pool if id(r) not in reserved][:40] or pool[:40]
@@ -128,6 +156,8 @@ near = sum(1 for k in range(len(out)) if any(x['s'] == out[k]['s'] for x in out[
 top_rep = sum(1 for r in out[:TOP_PORTADA] if posH.get(r['p'], 1e9) < TOP_PORTADA)
 pairs = sum(1 for a, b in zip(out, out[1:]) if a['p'] in posH and b['p'] in posH and abs(posH[a['p']] - posH[b['p']]) <= VECINAS)
 print(f'{N} fotos · B/N {n_bw} en posiciones {[k + 1 for k, r in enumerate(out) if r["bw"]]}')
+print('fijas:', {k + 1: out[k]['p'].split('/')[-1] for k in sorted(forced)})
+print(f'calidad media 1-60: nitidez {sum(r["zsharp"] for r in out[:60]) / 60:+.2f} · contraste {sum(r["zcontrast"] for r in out[:60]) / 60:+.2f} · con aviso {sum(r["flag"] for r in out[:60])} · baja resolución {sum(r["res"] < 1600 for r in out[:60])}')
 for a, b in ((0, 30), (30, 100), (100, 200), (200, N)):
     blk = out[a:b]; yy = [r['y'] for r in blk]
     print(f'  {a + 1}-{min(b, N)}: 2021-23 {sum(y in MEJORES for y in yy)}/{len(blk)} · futbolistas {sum(1 for r in blk if FUTBOL.search(r["p"]) and FUTBOLISTAS.search(r["title"]))} · spot {sum(1 for r in blk if r["p"] in spot_up)} · retratos {sum(r["close"] for r in blk)}')
