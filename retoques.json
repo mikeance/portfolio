@@ -1,0 +1,9 @@
+{
+  "_info": "Retoques de fotos para la web. La web usa la versión «retocada» en lugar del original allí donde el catálogo tenga el original (las rutas son relativas a ~/Desktop/FOTO; el original nunca se toca). Los parámetros permiten rehacer el retoque con scripts/retoque-ampliar.mjs.",
+  "2024/2024-03 Adidas Real Madrid (#12459)/Roll02 - Portra 400/AdidasRealMadrid-42.jpg": {
+    "retocada": "2024/2024-03 Adidas Real Madrid (#12459)/Roll02 - Portra 400/AdidasRealMadrid-42 ampliada.jpg",
+    "que": "Vini JR: ampliada 1,2154× dentro del marco del negativo (solo recorte y escala), cara más centrada, sin el micrófono",
+    "script": "CALIDAD=100 node scripts/retoque-ampliar.mjs <original> <salida> 1.2154 1500 1635.7",
+    "fecha": "2026-09-24"
+  }
+}

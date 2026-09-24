@@ -14,6 +14,12 @@ FOTO = os.path.expanduser('~/Desktop/FOTO')
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAT = os.path.join(W, 'catalogo')
 NAME = {'P': 'faces', 'E': 'editorial', 'L': 'lifestyle'}
+# Retoques (retoques.json): la web usa la versión retocada en lugar del original (el catálogo sigue con el original)
+RETOQ = {k: v for k, v in json.load(open(os.path.join(W, 'retoques.json'))).items() if not k.startswith('_')} if os.path.exists(os.path.join(W, 'retoques.json')) else {}
+def srcpath(p):
+    r = RETOQ.get(p)
+    q = os.path.join(FOTO, r['retocada']) if r else None
+    return q if q and os.path.exists(q) else os.path.join(FOTO, p)
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 f = args[0] if args else max(glob.glob(os.path.expanduser('~/Downloads/seleccion-fotos*.json')), key=os.path.getmtime)
@@ -72,7 +78,7 @@ prev_origen_p = os.path.join(W, 'fotos', 'origen.json')
 prev_on_web = set(json.load(open(prev_origen_p)).values()) if os.path.exists(prev_origen_p) else set()  # fotos que estaban en la web antes de este export
 n, seen, web_titles, web_works, origen = 0, set(), {}, {}, {}
 for p, ks in sel.items():
-    src = os.path.join(FOTO, p)
+    src = srcpath(p)
     if not os.path.exists(src):
         print('  no existe:', p); continue
     for k in ks:
@@ -85,7 +91,7 @@ for p, ks in sel.items():
         if p in titles: web_titles[rel] = titles[p]
         if p in works: web_works[rel] = works[p]
 for i, p in enumerate(portada, 1):
-    src = os.path.join(FOTO, p)
+    src = srcpath(p)
     if os.path.exists(src):
         dest = dest_for(p, 'portada', f'{i:03d}_')
         subprocess.run(['cp', '-pc', src, dest])
@@ -143,9 +149,16 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
         return present
     present = scan()
     added = removed = 0; missing = set()
+    # fotos con retoque: fuera las copias del original que queden en works (se usan las retocadas)
+    for p in RETOQ:
+        orig = os.path.join(FOTO, p)
+        if srcpath(p) != orig and os.path.exists(orig):
+            for s2, fp in present.get(sha_of(orig), []):
+                if os.path.exists(fp): os.remove(fp); removed += 1
+    if removed: present = scan()
     for p, slug in work_of.items():
         if slug and slug not in folders: missing.add(slug); continue
-        src = os.path.join(FOTO, p)
+        src = srcpath(p)
         if not os.path.exists(src): continue
         h = sha_of(src)
         for s2, fp in present.get(h, []):
@@ -159,7 +172,7 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
     # fotos que han dejado de estar en la web (descartadas ✕ o sin marcas): fuera también de todas las carpetas de works.
     # Las que solo existen como archivos sueltos en works (nunca estuvieron en la web por el catálogo) no se tocan.
     gone = (prev_on_web - set(sel)) | set(d.get('descartadas', []))
-    gone_shas = {sha_of(os.path.join(FOTO, p)) for p in gone if os.path.exists(os.path.join(FOTO, p))}
+    gone_shas = {sha_of(srcpath(p)) for p in gone if os.path.exists(srcpath(p))}
     for h, lst in present.items():
         if h not in gone_shas: continue
         for s2, fp in lst:
@@ -167,7 +180,7 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
     if added or removed: present = scan()
     # títulos también para las copias ya existentes en works
     for p, t in titles.items():
-        src = os.path.join(FOTO, p)
+        src = srcpath(p)
         if os.path.exists(src):
             for s2, fp in present.get(sha_of(src), []): web_titles[os.path.relpath(fp, os.path.join(W, 'fotos'))] = t
     json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
@@ -178,7 +191,7 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
         if slug not in folders: continue
         paths = []
         for p in lst:
-            src = os.path.join(FOTO, p)
+            src = srcpath(p)
             if not os.path.exists(src): continue
             for s2, fp in present.get(sha_of(src), []):
                 if s2 == slug or s2.startswith(slug + '/'): paths.append(os.path.relpath(fp, os.path.join(W, 'fotos')))
