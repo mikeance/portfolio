@@ -4,11 +4,11 @@ import Mosaic from '../components/Mosaic.astro';
 import Lightbox from '../components/Lightbox.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
 import type { Photo } from '../lib/photos';
-interface Props { lang: Lang; path: string; title?: string; description?: string; h1?: string; photos: Photo[]; order?: 'color' | 'manual' | 'life' | 'faces' }
-const { lang, path, title, description, h1, photos, order } = Astro.props;
+interface Props { lang: Lang; path: string; title?: string; description?: string; h1?: string; photos: Photo[]; order?: 'color' | 'manual' | 'life' | 'faces'; share?: boolean }
+const { lang, path, title, description, h1, photos, order, share } = Astro.props;
 const t = useTranslations(lang);
 ---
-<Base lang={lang} path={path} title={title} description={description} h1={h1}>
+<Base lang={lang} path={path} title={title} description={description} h1={h1} image={share ? photos[0] : undefined}>
   <main class="wrap">
     <Mosaic photos={photos} order={order} />
   </main>

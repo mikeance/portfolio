@@ -4,11 +4,19 @@ import { sortByColor, sortLife, sortFaces } from '../lib/photos';
 interface Props { photos: Photo[]; order?: 'color' | 'manual' | 'life' | 'faces' }
 const { photos, order = 'color' } = Astro.props;
 const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) : order === 'faces' ? sortFaces(photos) : sortByColor(photos);
+// ancho real de cada versión: -400 tiene 400 px de ancho; -800 cabe en 800×800
+const w800 = (p: Photo) => (p.ratio >= 1 ? 800 : Math.round(800 * p.ratio));
+const srcset = (p: Photo) => `/photos/${p.id}-400.webp 400w, /photos/${p.id}-800.webp ${w800(p)}w`;
+// hueco que ocupa cada foto según las columnas de la web (5/4/3/2); las horizontales, el doble
+const SIZES_V = '(min-width: 1500px) 20vw, (min-width: 900px) 25vw, (min-width: 560px) 33vw, 50vw';
+const SIZES_W = '(min-width: 1500px) 40vw, (min-width: 900px) 50vw, (min-width: 560px) 66vw, 100vw';
 ---
+<noscript><style>.grid figure { display: block !important; position: static !important; } .grid figure img { opacity: 1 !important; }</style></noscript>
 <div class="grid">
-  {items.map((p) => (
+  {items.map((p, i) => (
     <figure class={p.ratio > 1.15 ? 'wide' : undefined} data-id={p.id} data-r={p.ratio} data-title={p.title}>
-      <img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} loading="lazy" decoding="async" width="800" height={Math.round(800 / p.ratio)} />
+      {/* las primeras fotos (lo que se ve al entrar) se piden enseguida; el resto, al acercarse */}
+      <img src={`/photos/${p.id}-800.webp`} srcset={srcset(p)} sizes={p.ratio > 1.15 ? SIZES_W : SIZES_V} alt={p.title ?? ''} loading={i < 8 ? 'eager' : 'lazy'} fetchpriority={i < 3 ? 'high' : undefined} decoding="async" width="800" height={Math.round(800 / p.ratio)} />
       {p.title && <figcaption class={(p.lumB ?? p.lum) < 0.45 ? 'light' : undefined}>{p.title}</figcaption>}
     </figure>
   ))}
@@ -17,6 +25,10 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
 <style>
   /* Mosaico compacto (JS, src/lib/mosaic-layout.js): cada foto conserva su proporción, las verticales tienen el alto de una de 35 mm, las horizontales ocupan dos columnas y no quedan huecos. */
   .grid { position: relative; }
+  /* Hasta que el mosaico coloca las fotos, no se muestran: así el navegador no descarga todas de golpe
+     (creería que están a la vista) y la página no salta al colocarlas. El pie queda abajo mientras tanto. */
+  .grid:not(.ready) { min-height: 100vh; }
+  .grid:not(.ready) figure { display: none; }
   figure { position: absolute; margin: 0; cursor: zoom-in; }
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
   figure img.ok { opacity: 1; }
@@ -48,6 +60,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
     img.complete ? ok() : img.addEventListener('load', ok);
   });
   layoutAll();
+  grids.forEach((g) => g.classList.add('ready'));
   addEventListener('resize', layoutAll);
 
   // Visor (uno por página, ver Lightbox.astro): carrusel con scroll horizontal (dedo en móvil; flechas, teclado

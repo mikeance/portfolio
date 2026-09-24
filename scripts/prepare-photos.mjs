@@ -84,6 +84,7 @@ for (const file of walk(SRC)) {
   idBySha.set(sha, id);
   const small = join(OUT, `${id}-800.webp`);
   const large = join(OUT, `${id}-1600.webp`);
+  const tiny = join(OUT, `${id}-400.webp`);   // 400 px de ancho: móvil y miniaturas (srcset)
   const base = sharp(file, { failOn: 'none' }).rotate();
   const info = await base.clone().metadata();
   const rotated = info.orientation && info.orientation >= 5;
@@ -91,6 +92,7 @@ for (const file of walk(SRC)) {
   const h = rotated ? info.width : info.height;
   if (!existsSync(large)) await base.clone().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toFile(large);
   if (!existsSync(small)) await base.clone().resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 78 }).toFile(small);
+  if (!existsSync(tiny)) await base.clone().resize({ width: 400, withoutEnlargement: true }).webp({ quality: 76 }).toFile(tiny);   // 400 px de ancho
   const { data } = await sharp(small).resize(8, 8, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   // Croma medio por píxel (32×32): ~0 en blanco y negro, alto en fotos de color (para filtrar B/N en el catálogo)
   const { data: d32 } = await sharp(small).resize(32, 32, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });

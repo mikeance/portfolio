@@ -11,7 +11,7 @@ const { items } = Astro.props as { items: Item[] };
     <li>
       <a class="work" href={w.href}><Scatter text={w.name} /></a>
       <div class="strip" aria-hidden="true">
-        {w.photos.map((p) => <a href={w.href} tabindex="-1"><img src={`/photos/${p.id}-800.webp`} alt={p.title ?? ''} loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} />{p.title && <span class={`cap ${(p.lumB ?? p.lum) < 0.45 ? 'light' : ''}`}>{p.title}</span>}</a>)}
+        {w.photos.map((p) => <a href={w.href} tabindex="-1"><img src={`/photos/${p.id}-400.webp`} srcset={`/photos/${p.id}-400.webp 1x, /photos/${p.id}-800.webp 2x`} alt={p.title ?? ''} loading="lazy" decoding="async" style={`aspect-ratio:${p.ratio}`} />{p.title && <span class={`cap ${(p.lumB ?? p.lum) < 0.45 ? 'light' : ''}`}>{p.title}</span>}</a>)}
       </div>
     </li>
   ))}

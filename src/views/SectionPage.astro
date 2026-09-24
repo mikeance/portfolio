@@ -9,7 +9,7 @@ import { seoName, type Work, type Section } from '../lib/works';
 const { lang, work, section } = Astro.props as { lang: Lang; work: Work; section: Section };
 const t = useTranslations(lang);
 ---
-<Base lang={lang} path={section.href} title={`${seoName(section.name)} · ${seoName(work.name)}`} description={t('seo.work.description').replaceAll('{name}', `${seoName(section.name)} (${seoName(work.name)})`)}>
+<Base lang={lang} path={section.href} image={section.photos[0]} title={`${seoName(section.name)} · ${seoName(work.name)}`} description={t('seo.work.description').replaceAll('{name}', `${seoName(section.name)} (${seoName(work.name)})`)}>
   <main class="wrap">
     <a class="up" href={work.href}>{work.name}</a>
     <h1><Scatter text={section.name} class="now" /></h1>

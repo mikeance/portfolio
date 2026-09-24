@@ -6,7 +6,7 @@ import { works } from '../lib/works';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
 ---
-<Base lang={lang} path="/works" title={t('seo.works.title')} description={t('seo.works.description')} h1={`${t('seo.works.title')} — Miguel Antón`}>
+<Base lang={lang} path="/works" image={works[0]?.strip[0]} title={t('seo.works.title')} description={t('seo.works.description')} h1={`${t('seo.works.title')} — Miguel Antón`}>
   <main class="wrap">
     <WorkList items={works.map((w) => ({ name: w.name, href: w.href, photos: w.strip }))} />
   </main>

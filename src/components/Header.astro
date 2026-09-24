@@ -19,7 +19,7 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
 ---
 <header>
   <a class="brand" href={localePath(lang, '/')} aria-label={site.name}>
-    {hasLogo ? <img src="/logo.svg" alt={site.name} height="84" /> : <span>{site.name}</span>}
+    {hasLogo ? <img src="/logo.svg" alt={site.name} width="140" height="84" /> : <span>{site.name}</span>}
   </a>
   <nav style={`--R:${ratioSum};--N:${NAV.length}`}>
     {categories.map((c) => (

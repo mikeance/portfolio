@@ -25,7 +25,15 @@ export interface Photo {
   ordS?: number;  // WORKS: posición manual dentro de su colección
 }
 
-export const photos = all as Photo[];
+// Fotos sin texto (archivos que solo están en works): se usa el nombre de su colección o work, p. ej.
+// «SEBAGO x MINI 2020» → «Sebago x Mini · 2020» (texto alternativo para Google y leyenda al pasar el cursor).
+const pretty = (s: string) => s.split(/\s+/).map((w) => (/^x$/i.test(w) ? 'x' : /^[A-ZÁÉÍÓÚÑ&]+$/.test(w) ? w[0] + w.slice(1).toLowerCase() : w)).join(' ');
+const fallbackTitle = (p: Photo) => {
+  const name = p.sectionName || p.workName; if (!name) return undefined;
+  const m = name.match(/^(.*?)\s*((?:19|20)\d\d)$/);
+  return m ? `${pretty(m[1])} · ${m[2]}` : pretty(name);
+};
+export const photos = (all as Photo[]).map((p) => (p.title || p.cat !== 'work' ? p : { ...p, title: fallbackTitle(p) }));
 export const categories = ['editorial', 'faces', 'lifestyle'] as const;
 export type Category = (typeof categories)[number];
 
