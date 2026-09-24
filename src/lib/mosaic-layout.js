@@ -6,8 +6,8 @@
 //   que están casi igual de bajas, para acercarse a la altura de las de 35 mm.
 // - Las horizontales ocupan dos columnas vecinas cuando están casi a la misma altura (la diferencia se reparte en
 //   los huecos de la más corta, sin dejar blanco) y nunca dos a la misma altura.
-// - La vertical que sigue a una horizontal va justo debajo con su mismo ancho (foto grande), si la anterior grande
-//   no está demasiado cerca.
+// - Si la siguiente foto es horizontal y no hay dos columnas a la par, las verticales que van antes se colocan en la
+//   columna que mejor iguala una pareja, para que la horizontal aparezca pronto (sin agrandar ninguna foto).
 // El catálogo usa una copia de este archivo sin «export» (la genera scripts/catalog.mjs).
 
 /**
@@ -49,9 +49,6 @@ export function packMosaic(ratios, W, cols, opt = {}) {
     put(i, cx[c], y, w);
     if (isWide(r)) {
       bands.push({ top: y, bottom: y + hh }); lastWide = { c, bottom: y + hh + GAP };
-      // la siguiente foto del orden, si es vertical, irá debajo con el mismo ancho
-      const nx = i + 1;
-      pending = cols >= 3 && nx < ratios.length && !isWide(ratios[nx]) && pos[nx] === undefined && count - lastBig >= BIG_EVERY ? { i: nx, c } : null;
     } else lastWide = null;
     h[c] = h[c + 1] = y + hh + GAP;
     stacks[c] = []; stacks[c + 1] = [];
@@ -93,15 +90,20 @@ export function packMosaic(ratios, W, cols, opt = {}) {
       placeSpan(queue[wi], free[0]); queue.splice(wi, 1); continue;
     }
     const i = queue[vi];
-    // la foto reservada va justo debajo de su horizontal, con el mismo ancho (foto grande)
-    if (pending && i === pending.i) {
-      const lc = pending.c;
-      pending = null;
-      if (Math.abs(h[lc] - h[lc + 1]) < 1) { placeSpan(i, lc); lastBig = count; queue.splice(vi, 1); continue; }
-    }
-    if (pending && queue.indexOf(pending.i) > 3) pending = null;         // si tarda en llegar, se libera la reserva
     let col = c;
-    if (isSquarer(ratios[i])) {                                         // la más ancha de las columnas casi igual de bajas
+    // hay una horizontal esperando (es la siguiente o casi): esta vertical va, entre las columnas bajas, a la que más
+    // iguala alguna pareja de columnas vecinas, para que la horizontal encuentre sitio pronto
+    if (cols >= 3 && wi >= 0 && wi <= vi + 2) {
+      let best = Infinity;
+      for (let j = 0; j < cols; j++) {
+        if (h[j] > h[c] + 0.35 * hRef) continue;                        // solo columnas casi tan bajas como la más baja
+        const nh = h.slice(); nh[j] += hgt(cw[j], ratios[i]) + GAP;
+        let pd = Infinity; for (let q = 0; q + 1 < cols; q++) pd = Math.min(pd, Math.abs(nh[q] - nh[q + 1]) + 0.02 * Math.max(nh[q], nh[q + 1]));
+        const score = pd + 0.15 * (h[j] - h[c]);
+        if (score < best) { best = score; col = j; }
+      }
+    }
+    if (isSquarer(ratios[i]) && col === c) {                                         // la más ancha de las columnas casi igual de bajas
       for (let j = 0; j < cols; j++) if (h[j] <= h[c] + 0.08 * hRef && cw[j] > cw[col]) col = j;
     }
     placeV(i, col); queue.splice(vi, 1);
