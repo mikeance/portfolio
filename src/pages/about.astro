@@ -30,4 +30,6 @@ const ig = `https://www.instagram.com/${site.instagram}/`;
   p { font-size: 0.95rem; line-height: 1.6; margin: 0 0 0.9rem; }
   .en { margin-top: 1.8rem; color: var(--muted); font-style: italic; }
   .contact a { color: inherit; border-bottom: 1px solid transparent; } .contact a:hover { border-color: currentColor; }
+  /* contacto e Instagram siempre en una línea: en pantallas estrechas la letra de esta línea se ajusta para caber */
+  .contact { white-space: nowrap; font-size: min(0.95rem, calc((100vw - 2 * var(--gutter)) / 25)); }
 </style>
