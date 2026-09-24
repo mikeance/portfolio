@@ -4,12 +4,21 @@ import Base from '../layouts/Base.astro';
 import Scatter from '../components/Scatter.astro';
 import { useTranslations } from '../i18n/ui';
 import { site } from '../data/site';
+import { photos } from '../lib/photos';
 const t = useTranslations('en');
 const ig = `https://www.instagram.com/${site.instagram}/`;
+// foto de la bio (de LIFE): Asturias, 2025
+const foto = photos.find((p) => p.cat === 'lifestyle' && p.src?.endsWith('PersonalSpring25-61.jpg'));
+const w800 = foto ? (foto.ratio >= 1 ? 800 : Math.round(800 * foto.ratio)) : 0, w1600 = foto ? (foto.ratio >= 1 ? 1600 : Math.round(1600 * foto.ratio)) : 0;
 ---
 <Base lang="en" path="/about" title={t('seo.about.title')} description={t('seo.about.description')}>
   <main class="wrap about">
     <h1><Scatter text="About" class="now" /></h1>
+    {foto && (
+      <figure class="foto">
+        <img src={`/photos/${foto.id}-800.webp`} srcset={`/photos/${foto.id}-400.webp 400w, /photos/${foto.id}-800.webp ${w800}w, /photos/${foto.id}-1600.webp ${w1600}w`} sizes="(max-width: 560px) calc(100vw - 4rem), 34rem" alt={foto.title ?? ''} width="800" height={Math.round(800 / foto.ratio)} fetchpriority="high" decoding="async" />
+      </figure>
+    )}
     <div lang="es">
       <p>Miguel Antón, nacido en Madrid en 1993.</p>
       <p>Como fotógrafo estoy especializado en retrato, editorial y campañas, principalmente en película y con luz natural. También he llevado a cabo numerosos trabajos como director creativo y diseñador gráfico.</p>
@@ -29,6 +38,13 @@ const ig = `https://www.instagram.com/${site.instagram}/`;
   h1 { font-size: clamp(1.2rem, 2.4vw, 1.8rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; margin: 0.6rem 0 1.6rem; }
   p { font-size: 0.95rem; line-height: 1.6; margin: 0 0 0.9rem; }
   .en { margin-top: 1.8rem; color: var(--muted); font-style: italic; }
+  .foto { margin: 0 0 1.8rem; }
+  .foto img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
+  /* Móvil: misma disposición, letra más pequeña y más aire a los lados */
+  @media (max-width: 560px) {
+    .about { padding-left: 2rem; padding-right: 2rem; }
+    p { font-size: 0.85rem; line-height: 1.6; }
+  }
   .contact { text-align: center; }
   .contact a { color: inherit; border-bottom: 1px solid transparent; } .contact a:hover { border-color: currentColor; }
 </style>
