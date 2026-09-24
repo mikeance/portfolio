@@ -21,7 +21,7 @@ const ld = {
       jobTitle: 'Photographer and graphic designer', birthPlace: { '@type': 'Place', name: 'Madrid' },
       memberOf: { '@type': 'Organization', name: 'Scrap World', url: 'https://www.instagram.com/scrapworldes/' }, description: t('seo.person'), email: `mailto:${site.email}`, image: 'https://mikeance.com/og.png',
       address: { '@type': 'PostalAddress', addressLocality: 'Madrid', addressCountry: 'ES' },
-      knowsAbout: ['Film photography', 'Graphic design', 'Fotografía analógica', '35mm', 'Portrait photography', 'Editorial photography', 'Fashion photography'],
+      knowsAbout: ['Film photography', 'Graphic design', 'Fotografía analógica', '35mm', '120mm', 'Medium format photography', 'Portrait photography', 'Editorial photography', 'Fashion photography'],
       sameAs: [`https://www.instagram.com/${site.instagram}/`] },
     { '@type': 'WebSite', '@id': 'https://mikeance.com/#website', url: 'https://mikeance.com/', name: site.name, inLanguage: ['en', 'es'], publisher: { '@id': 'https://mikeance.com/#person' } },
     { '@type': path === '/about' ? 'ProfilePage' : 'CollectionPage', url: canonical, name: fullTitle, description: desc, isPartOf: { '@id': 'https://mikeance.com/#website' }, about: { '@id': 'https://mikeance.com/#person' } },
