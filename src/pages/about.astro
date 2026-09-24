@@ -14,13 +14,15 @@ const ig = `https://www.instagram.com/${site.instagram}/`;
       <p>Miguel Antón, nacido en Madrid en 1993.</p>
       <p>Como fotógrafo estoy especializado en retrato, editorial y campañas, principalmente en película y con luz natural. También he llevado a cabo numerosos trabajos como director creativo y diseñador gráfico.</p>
       <p>Como cofundador de Scrap World he disparado casi todas sus campañas y he trabajado para marcas como Adidas, Atlantic Records, Clockers, Galag, Home Run NYC, Kangol, Minishopmadrid, Nike, Porsche, Real Madrid o Zalando.</p>
-      <p class="contact">Contacto: <a href={`mailto:${site.email}`}>{site.email}</a> · <a href={ig} target="_blank" rel="noopener">Instagram @{site.instagram}</a></p>
+      <p class="contact">Contacto: <a href={`mailto:${site.email}`}>{site.email}</a></p>
+      <p class="contact">Instagram: <a href={ig} target="_blank" rel="noopener">@{site.instagram}</a></p>
     </div>
     <div lang="en" class="en">
       <p>Miguel Antón, born in Madrid in 1993.</p>
       <p>As a photographer I specialise in portraits, editorial and campaigns, mostly on film and in natural light. I have also worked on numerous projects as a creative director and graphic designer.</p>
       <p>As co-founder of Scrap World I’ve shot almost all of its campaigns, and I’ve worked for brands such as Adidas, Atlantic Records, Clockers, Galag, Home Run NYC, Kangol, Minishopmadrid, Nike, Porsche, Real Madrid and Zalando.</p>
-      <p class="contact">Contact: <a href={`mailto:${site.email}`}>{site.email}</a> · <a href={ig} target="_blank" rel="noopener">Instagram @{site.instagram}</a></p>
+      <p class="contact">Contact: <a href={`mailto:${site.email}`}>{site.email}</a></p>
+      <p class="contact">Instagram: <a href={ig} target="_blank" rel="noopener">@{site.instagram}</a></p>
     </div>
   </main>
 </Base>
@@ -30,6 +32,4 @@ const ig = `https://www.instagram.com/${site.instagram}/`;
   p { font-size: 0.95rem; line-height: 1.6; margin: 0 0 0.9rem; }
   .en { margin-top: 1.8rem; color: var(--muted); font-style: italic; }
   .contact a { color: inherit; border-bottom: 1px solid transparent; } .contact a:hover { border-color: currentColor; }
-  /* contacto e Instagram siempre en una línea: en pantallas estrechas la letra de esta línea se ajusta para caber */
-  .contact { white-space: nowrap; font-size: min(0.95rem, calc((100vw - 2 * var(--gutter)) / 25)); }
 </style>
