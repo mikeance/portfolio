@@ -8,6 +8,9 @@ import menuSvg from '../data/menu.json';
 import menuExtra from '../data/menu-extra.json';   // ABOUT (misma tipografía, scripts/menu-extra.mjs)
 const menu = [...menuSvg, ...menuExtra];
 const word = (key: string) => menu.find((w) => w.key === key)!;
+// suma de proporciones (ancho/alto) de las seis palabras: en móvil el alto se calcula para que quepan en una línea
+const NAV = [...categories, 'works', 'about', 'contact'];
+const ratioSum = +NAV.reduce((a, k) => a + word(k).vb[2] / word(k).vb[3], 0).toFixed(3);
 const H = 18; // alto de las palabras en px (navegador); en móvil se reduce por CSS
 interface Props { lang: Lang; current: string }
 const { lang, current } = Astro.props;
@@ -18,7 +21,7 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   <a class="brand" href={localePath(lang, '/')} aria-label={site.name}>
     {hasLogo ? <img src="/logo.svg" alt={site.name} height="84" /> : <span>{site.name}</span>}
   </a>
-  <nav>
+  <nav style={`--R:${ratioSum};--N:${NAV.length}`}>
     {categories.map((c) => (
       <a class="top" href={localePath(lang, `/photography/${c}`)} aria-current={current === `/photography/${c}` ? 'page' : undefined} aria-label={t(`cat.${c}`)}>
         <svg class="w" viewBox={word(c).vb.join(' ')} height={H} width={+(H * word(c).vb[2] / word(c).vb[3]).toFixed(1)} aria-hidden="true">{word(c).letters.map((l) => <path d={l.d} style={`--m: matrix(${l.m.join(',')})`} />)}</svg>
@@ -63,7 +66,12 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
   .dd li a { color: var(--muted); } .dd li a:hover, .dd li a[aria-current='page'] { color: var(--fg); }
   .soon { color: var(--muted); font-style: italic; }
   /* Móvil: el desplegable, del ancho justo del texto, se abre bajo CONTACT; si no cabe a la derecha se ancla a la derecha (JS) */
-  @media (max-width: 560px) { header { flex-direction: column; } nav { gap: 1.1rem; flex-wrap: wrap; } .dd ul { left: 0; right: auto; min-width: 0; width: max-content; max-width: calc(100vw - 2 * var(--gutter)); } .dd ul.flip { left: auto; right: 0; } }
+  /* Móvil: las seis palabras en una sola línea; su alto se ajusta al ancho de la pantalla (máximo 15 px) */
+  @media (max-width: 560px) {
+    nav { --gap: 8px; gap: var(--gap); flex-wrap: nowrap; width: 100%; justify-content: space-between; }
+    .w { height: min(15px, calc((100vw - 2 * var(--gutter) - (var(--N) - 1) * var(--gap) - 2px) / var(--R))); }
+  }
+  @media (max-width: 560px) { header { flex-direction: column; } .dd ul { left: auto; right: 0; min-width: 0; width: max-content; max-width: calc(100vw - 2 * var(--gutter)); } }   /* CONTACT queda en el borde derecho: el desplegable se ancla a la derecha */
 </style>
 <script>
   // En táctil no hay "hover": el primer toque descoloca las letras y la navegación llega medio segundo después.
