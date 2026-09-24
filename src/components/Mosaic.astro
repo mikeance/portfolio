@@ -15,7 +15,7 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
 </div>
 
 <style>
-  /* Mosaico compacto (JS): cada foto conserva su proporción, las horizontales ocupan dos columnas y no quedan huecos. */
+  /* Mosaico compacto (JS, src/lib/mosaic-layout.js): cada foto conserva su proporción, las verticales tienen el alto de una de 35 mm, las horizontales ocupan dos columnas y no quedan huecos. */
   .grid { position: relative; }
   figure { position: absolute; margin: 0; cursor: zoom-in; }
   figure img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); opacity: 0; transition: opacity 0.5s; }
@@ -28,57 +28,17 @@ const items = order === 'manual' ? photos : order === 'life' ? sortLife(photos) 
 </style>
 
 <script>
+  import { packMosaic } from '../lib/mosaic-layout.js';
   const GAP = 10, PAD = 12; // hueco entre fotos y marco (6px por lado)
   const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
 
-  // Cada foto va a la columna más corta. Una horizontal ocupa dos columnas: se coloca cuando dos columnas
-  // vecinas están casi a la misma altura y la diferencia se reparte entre los huecos de la más corta.
+  // Colocación en src/lib/mosaic-layout.js (la misma que usa el editor de orden del catálogo):
+  // primera fila alineada arriba, verticales a la altura de una de 35 mm, horizontales a dos columnas, sin huecos.
   function layout(grid: HTMLElement) {
     const figs = [...grid.querySelectorAll('figure')] as HTMLElement[];
-    const cols = colCount();
-    const col = (grid.clientWidth - (cols - 1) * GAP) / cols;
-    const h = new Array(cols).fill(0);
-    const stacks: { el: HTMLElement; top: number }[][] = Array.from({ length: cols }, () => []);
-    const hgt = (el: HTMLElement, w: number) => (w - PAD) / +el.dataset.r! + PAD;
-    const queue = figs.slice();
-    const wides: { top: number; bottom: number; col: number }[] = []; // horizontales ya colocadas (franja vertical)
-    const placeV = (el: HTMLElement, c: number) => {
-      el.style.cssText = `left:${c * (col + GAP)}px;top:${h[c]}px;width:${col}px`;
-      stacks[c].push({ el, top: h[c] });
-      h[c] += hgt(el, col) + GAP;
-    };
-    const placeW = (el: HTMLElement, c: number) => {
-      const short = h[c] <= h[c + 1] ? c : c + 1, d = Math.abs(h[c] - h[c + 1]), y = Math.max(h[c], h[c + 1]);
-      const st = stacks[short];
-      if (d > 0 && st.length) { const extra = d / st.length; st.forEach((s, i) => { s.top += extra * (i + 1); s.el.style.top = `${s.top}px`; }); }
-      const w = 2 * col + GAP;
-      el.style.cssText = `left:${c * (col + GAP)}px;top:${y}px;width:${w}px`;
-      wides.push({ top: y, bottom: y + hgt(el, w), col: c });
-      h[c] = h[c + 1] = y + hgt(el, w) + GAP;
-      stacks[c] = []; stacks[c + 1] = [];
-    };
-    const bestPair = (c: number) => {
-      let best = -1, bd = Infinity;
-      for (const i of [c - 1, c]) if (i >= 0 && i + 1 < cols) { const d = Math.abs(h[i] - h[i + 1]); if (d < bd) { bd = d; best = i; } }
-      return { i: best, d: bd };
-    };
-    while (queue.length) {
-      const c = h.indexOf(Math.min(...h));
-      const wi = queue.findIndex((el) => el.classList.contains('wide'));
-      const vi = queue.findIndex((el) => !el.classList.contains('wide'));
-      if (wi >= 0 && (vi < 0 || wi === 0)) {
-        const { i, d } = bestPair(c);
-        const short = h[i] <= h[i + 1] ? i : i + 1;
-        const tolerable = d <= 14 * stacks[short].length + 1;
-        const y = Math.max(h[i], h[i + 1]), hh = hgt(queue[wi], 2 * col + GAP);
-        const alone = !wides.some((o) => y < o.bottom && y + hh > o.top); // ninguna otra horizontal a la misma altura
-        if (i >= 0 && tolerable && alone) { placeW(queue.splice(wi, 1)[0], i); continue; }
-        // solo quedan horizontales: se apilan bajo la última para no compartir franja
-        if (vi < 0) { placeW(queue.splice(wi, 1)[0], alone && i >= 0 ? i : (wides.at(-1)?.col ?? 0)); continue; }
-      }
-      placeV(queue.splice(vi, 1)[0], c);
-    }
-    grid.style.height = `${Math.max(0, Math.max(...h) - GAP)}px`;
+    const { pos, height } = packMosaic(figs.map((el) => +el.dataset.r!), grid.clientWidth, colCount(), { gap: GAP, pad: PAD });
+    figs.forEach((el, i) => { const p = pos[i]; el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px`; });
+    grid.style.height = `${Math.ceil(height)}px`;
   }
 
   const grids = [...document.querySelectorAll<HTMLElement>('.grid')];
