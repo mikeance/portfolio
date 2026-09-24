@@ -32,6 +32,7 @@ const hasLogo = existsSync(join(process.cwd(), 'public/logo.svg'));
       <ul>
         <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
         <li><a href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener">Instagram · @{site.instagram}</a></li>
+        <li><a href={localePath(lang, '/about')} aria-current={current === '/about' ? 'page' : undefined}>{t('nav.about')}</a></li>
       </ul>
     </div>
   </nav>

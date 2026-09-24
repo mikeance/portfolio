@@ -4,9 +4,26 @@ import Footer from '../components/Footer.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
 import { site } from '../data/site';
 import '../styles/global.css';
-interface Props { lang: Lang; path: string; title?: string }
-const { lang, path, title } = Astro.props;
+interface Props { lang: Lang; path: string; title?: string; description?: string; h1?: string }
+const { lang, path, title, description, h1 } = Astro.props;
 const t = useTranslations(lang);
+const fullTitle = title ? `${title} · ${site.name}` : t('seo.home.title');
+const desc = description || t('seo.home.description');
+const canonical = new URL(path.endsWith('/') ? path : path + '/', 'https://mikeance.com').href;
+// Datos estructurados: quién eres, para la ficha de Google (no se ve en la página)
+const ld = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'Person', '@id': 'https://mikeance.com/#person', name: site.name, alternateName: site.instagram, url: 'https://mikeance.com/',
+      jobTitle: 'Photographer and graphic designer', birthPlace: { '@type': 'Place', name: 'Madrid' },
+      memberOf: { '@type': 'Organization', name: 'Scrap World', url: 'https://www.instagram.com/scrapworldes/' }, description: t('seo.person'), email: `mailto:${site.email}`, image: 'https://mikeance.com/og.png',
+      address: { '@type': 'PostalAddress', addressLocality: 'Madrid', addressCountry: 'ES' },
+      knowsAbout: ['Film photography', 'Graphic design', 'Fotografía analógica', '35mm', 'Portrait photography', 'Editorial photography', 'Fashion photography'],
+      sameAs: [`https://www.instagram.com/${site.instagram}/`] },
+    { '@type': 'WebSite', '@id': 'https://mikeance.com/#website', url: 'https://mikeance.com/', name: site.name, inLanguage: ['en', 'es'], publisher: { '@id': 'https://mikeance.com/#person' } },
+    { '@type': path === '/about' ? 'ProfilePage' : 'CollectionPage', url: canonical, name: fullTitle, description: desc, isPartOf: { '@id': 'https://mikeance.com/#website' }, about: { '@id': 'https://mikeance.com/#person' } },
+  ],
+};
 ---
 <!doctype html>
 <html lang={lang}>
@@ -17,22 +34,28 @@ const t = useTranslations(lang);
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>{title ? `${title} · ${site.name}` : `${site.name} · Photography`}</title>
-    <meta name="description" content={t('site.description')} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <link rel="canonical" href={canonical} />
+    <meta name="author" content={site.name} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
-    <meta property="og:title" content={title ? `${title} · ${site.name}` : `${site.name} · Photography`} />
-    <meta property="og:description" content={t('site.description')} />
-    <meta property="og:url" content={new URL(Astro.url.pathname, 'https://mikeance.com').href} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale:alternate" content="en_GB" />
     <meta property="og:image" content="https://mikeance.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={site.name} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://mikeance.com/og.png" />
+    <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   </head>
   <body>
     <Header lang={lang} current={path} />
+    {h1 && <h1 class="sr-only">{h1}</h1>}
     <slot />
     <Footer lang={lang} />
   </body>

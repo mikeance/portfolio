@@ -5,11 +5,11 @@ import Mosaic from '../components/Mosaic.astro';
 import Lightbox from '../components/Lightbox.astro';
 import Scatter from '../components/Scatter.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
-import type { Work, Section } from '../lib/works';
+import { seoName, type Work, type Section } from '../lib/works';
 const { lang, work, section } = Astro.props as { lang: Lang; work: Work; section: Section };
 const t = useTranslations(lang);
 ---
-<Base lang={lang} path={section.href} title={`${section.name} · ${work.name}`}>
+<Base lang={lang} path={section.href} title={`${seoName(section.name)} · ${seoName(work.name)}`} description={t('seo.work.description').replaceAll('{name}', `${seoName(section.name)} (${seoName(work.name)})`)}>
   <main class="wrap">
     <a class="up" href={work.href}>{work.name}</a>
     <h1><Scatter text={section.name} class="now" /></h1>

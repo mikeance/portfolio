@@ -16,3 +16,6 @@ body {
 a { color: inherit; text-decoration: none; }
 
 .wrap { padding: 0.5rem var(--gutter) 2rem; max-width: 1700px; margin: 0 auto; }
+
+/* Solo para lectores de pantalla y buscadores (título principal de páginas sin título visible) */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

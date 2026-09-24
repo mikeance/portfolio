@@ -40,3 +40,16 @@ export const works: Work[] = [...map.values()]
   })
   .filter((w) => w.photos.length > 0)
   .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+
+/** Nombre de work/colección en formato normal para Google (en la web siguen en mayúsculas): «PORSCHE x SCRAPWORLD» → «Porsche x Scrap World». */
+const KEEP = new Set(['NYC', 'FC', 'FW', 'SS', 'SW', 'AW', 'DJ']);
+const FIX: Record<string, string> = { Scrapworld: 'Scrap World', Minishopmadrid: 'Minishopmadrid', Co: 'Co.' };
+export function seoName(name: string) {
+  return name.split(/\s+/).map((w) => {
+    const m = w.match(/^([A-Za-zÀ-ÿ]+)(\d+)$/);  // SUMMER22 → Summer 22, FW22 → FW22
+    if (m && !KEEP.has(m[1].toUpperCase())) return `${seoName(m[1])} ${m[2]}`;
+    if (w === 'x' || w === 'X' || w === '&' || /^\d/.test(w) || KEEP.has(w.replace(/\d+$/, '').toUpperCase())) return w === 'X' ? 'x' : w;
+    const t = w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    return FIX[t] ?? t;
+  }).join(' ');
+}

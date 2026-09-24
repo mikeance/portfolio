@@ -1,0 +1,35 @@
+---
+/** About: texto corto en español y, debajo, en inglés en cursiva. */
+import Base from '../layouts/Base.astro';
+import Scatter from '../components/Scatter.astro';
+import { useTranslations } from '../i18n/ui';
+import { site } from '../data/site';
+const t = useTranslations('en');
+const ig = `https://www.instagram.com/${site.instagram}/`;
+---
+<Base lang="en" path="/about" title={t('seo.about.title')} description={t('seo.about.description')}>
+  <main class="wrap about">
+    <h1><Scatter text="About" class="now" /></h1>
+    <div lang="es">
+      <p>Miguel Antón, fotógrafo y diseñador gráfico nacido en Madrid en 1993.</p>
+      <p>Retrato, editorial y campañas, principalmente en película y con luz natural.</p>
+      <p>Como cofundador de Scrap World he disparado casi todas sus campañas y he trabajado para marcas como Adidas, Atlantic Records, Clockers, Galag, Home Run NYC, Kangol, Minishopmadrid, Nike, Porsche, Real Madrid o Zalando.</p>
+      <p>Todas las fotos se revelan, amplían y escanean en Aulagalab, en Madrid.</p>
+    </div>
+    <div lang="en" class="en">
+      <p>Miguel Antón, photographer and graphic designer born in Madrid in 1993.</p>
+      <p>Portraits, editorial and campaigns, mostly on film and in natural light.</p>
+      <p>As co-founder of Scrap World I’ve shot almost all of its campaigns, and I’ve worked for brands such as Adidas, Atlantic Records, Clockers, Galag, Home Run NYC, Kangol, Minishopmadrid, Nike, Porsche, Real Madrid and Zalando.</p>
+      <p>All photos are developed, enlarged and scanned at Aulagalab, Madrid.</p>
+    </div>
+    <p class="contact"><a href={`mailto:${site.email}`}>{site.email}</a> · <a href={ig} target="_blank" rel="noopener">@{site.instagram}</a></p>
+  </main>
+</Base>
+<style>
+  .about { max-width: 34rem; }
+  h1 { font-size: clamp(1.2rem, 2.4vw, 1.8rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; margin: 0.6rem 0 1.6rem; }
+  p { font-size: 0.95rem; line-height: 1.6; margin: 0 0 0.9rem; }
+  .en { margin-top: 1.8rem; color: var(--muted); font-style: italic; }
+  .contact { margin-top: 2rem; font-size: 0.85rem; letter-spacing: 0.02em; }
+  .contact a { color: var(--muted); } .contact a:hover { color: var(--fg); }
+</style>

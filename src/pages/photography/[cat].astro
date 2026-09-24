@@ -11,4 +11,4 @@ const auto = (l: typeof list) => (cat === 'lifestyle' ? sortLife(l) : cat === 'f
 const manual = list.filter((p) => p.ord !== undefined).sort((a, b) => a.ord! - b.ord!);
 const items = manual.length ? [...manual, ...auto(list.filter((p) => p.ord === undefined))] : auto(list);
 ---
-<MosaicPage lang="en" path={`/photography/${cat}`} title={t(`cat.${cat}` as any)} photos={items} order="manual" />
+<MosaicPage lang="en" path={`/photography/${cat}`} title={t(`seo.${cat}.title` as any)} description={t(`seo.${cat}.description` as any)} h1={`${t(`seo.${cat}.title` as any)} — Miguel Antón`} photos={items} order="manual" />
