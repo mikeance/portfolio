@@ -42,4 +42,6 @@ Consult these guides before working on related tasks:
 - Tras cambiar fotos de la web: `python3 scripts/instagram-datos.py` (mantiene el plan). `--propuesta` rehace la propuesta automática desde cero.
 - Diapositivas: `id` o díptico `id1+id2` (dos horizontales en un 4:5). Posts con `formato: 'h'` se exportan a 1080×720 (3:2).
 - Stories: pestaña «Stories» del editor; la lógica (campaña de lanzamiento, 3 stories por post, encuesta de portada los sábados) está en `catalogo/instagram-stories.js`, compartida con el script de aplicar. Solo se guarda lo editado (`plan.campana`, `post.stories`). El export deja `stories/` (1080×1920) y `stories.txt` en cada carpeta, y carpetas `000 fecha Stories · …` para la campaña.
+- Pestañas del editor: Posts (editar), Orden (portadas en cuadrícula, arrastrar para reordenar), Perfil (vista previa 3:4), Stories. El número de cada post se puede editar para moverlo.
+- Fotos antiguas de la cuenta (visibles y archivadas, de la exportación): `catalogo/instagram-antiguas.html` → «Exportar selección» (`instagram-antiguas.json`). Siguiente paso pendiente: buscar los originales en ~/Desktop/FOTO (no volver a subir las copias comprimidas de Instagram).
 - Fotos ya publicadas en Instagram: `catalogo/instagram-publicadas.json` (ids de la web, cruzados con la exportación de la cuenta en `~/Desktop/RRSS`).
