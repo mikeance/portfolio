@@ -60,7 +60,12 @@ export function vistaTodas(root, arg) {
     return c;
   }
 
-  function rejilla() {
+  function rejilla(mantener = false) {   // mantener: tras un cambio en una foto la lista no se mueve; al filtrar, vuelve arriba
+    const y = mantener ? lista.scrollTop : 0; grupos.style.minHeight = grupos.offsetHeight + 'px';
+    pintarRejilla();
+    grupos.style.minHeight = ''; lista.scrollTop = y;
+  }
+  function pintarRejilla() {
     const ps = filtradas();
     const g = new Map(); for (const p of ps) { const s = sesion(p); if (!g.has(s)) g.set(s, []); g.get(s).push(p); }
     const orden = [...g.keys()].sort((a, b) => { const na = /^\d/.test(a), nb = /^\d/.test(b); return na !== nb ? nb - na : b.localeCompare(a, 'es', { numeric: true }); });
@@ -88,7 +93,8 @@ export function vistaTodas(root, arg) {
     refrescar(); lateral();
   });
 
-  function lateral() {
+  function lateral() { const y = panel.scrollTop, clave = [...sel].join('|'), mismo = panel.dataset.v === clave; panel.dataset.v = clave; pintarLateral(); if (mismo) panel.scrollTop = y; }
+  function pintarLateral() {
     const ps = [...sel].filter((p) => S.fotos.has(p));
     if (ps.length) return inspector(panel, ps, { alQuitar: () => { sel = new Set(); } });
     const todas = [...S.fotos.keys()], web = todas.filter(enWeb);
@@ -108,6 +114,6 @@ export function vistaTodas(root, arg) {
 
   function todo() { barra(); rejilla(); lateral(); }
   todo();
-  const off = alCambiar(() => { barra(); rejilla(); lateral(); });
+  const off = alCambiar(() => { barra(); rejilla(true); lateral(); });
   return () => { off(); removeEventListener('keydown', tecla); };
 }

@@ -50,6 +50,8 @@ export function montarHovers(centro, panel, K) {
   const imgs = new Map();
   const imagen = (p) => { let im = imgs.get(p); if (!im) { im = document.createElement('img'); im.loading = 'lazy'; im.decoding = 'async'; im.alt = ''; im.src = src(p, 400); im.srcset = `${src(p, 400)} 1x, ${src(p, 800)} 2x`; im.style.aspectRatio = ratio(p); imgs.set(p, im); } return im; };
   function pintar() {
+    const y = centro.scrollTop;   // al redibujar, la página se queda donde estaba
+    lista.style.minHeight = lista.offsetHeight + 'px';
     lista.className = `hovers ${modo === 'web' ? 'comoweb' : 'editar'}`;
     const scroll = new Map([...lista.querySelectorAll('li')].map((li) => [li.dataset.s, li.querySelector('.strip')?.scrollLeft || 0]));
     lista.replaceChildren();
@@ -72,10 +74,13 @@ export function montarHovers(centro, panel, K) {
       lista.appendChild(li);
       st.scrollLeft = scroll.get(it.slug) || 0;
     }
+    lista.style.minHeight = '';
+    centro.scrollTop = y;
   }
 
   // panel derecho: fotos del proyecto que no están en su hover (o la foto elegida)
-  function lateral() {
+  function lateral() { const y = panel.scrollTop, mismo = panel.dataset.v === (elegida || activa); panel.dataset.v = elegida || activa; pintarLateral(); if (mismo) panel.scrollTop = y; }
+  function pintarLateral() {
     if (elegida && S.fotos.has(elegida)) return inspector(panel, [elegida], { volver: 'Fotos para el hover', alVolver: () => { elegida = null; pintar(); lateral(); }, alQuitar: () => { elegida = null; } });
     const it = items.find((i) => i.slug === activa);
     if (!it) { panel.innerHTML = '<div class="ins"><p class="ayuda" style="padding:0">Este proyecto no tiene colecciones.</p></div>'; return; }
@@ -138,6 +143,7 @@ export function montarHovers(centro, panel, K) {
     let i = l.length;
     if (a && a.dataset.p !== p) { const b = a.getBoundingClientRect(); i = l.indexOf(a.dataset.p) + (e.clientX < b.left + b.width / 2 ? 0 : 1); }
     limpiar();
+    if (activa !== slug) { activa = slug; escribir('hov-activa-' + (padre || 'works'), activa); }   // el panel pasa a la fila que estás editando
     const nueva = !hover(slug).includes(p);
     l.splice(i, 0, p); poner(slug, l);
     if (nueva) toast('Añadida al hover', true);

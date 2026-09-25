@@ -138,7 +138,8 @@ export function vistaWeb(root, K) {
       && (!q || `${tituloDe(p)} ${sesion(p)} ${nombreWork(workDe(p))} ${p}`.toLowerCase().includes(q)))
       .sort((a, b) => esNueva(b) - esNueva(a) || sesion(b).localeCompare(sesion(a)));
   }
-  function panelDer() {
+  function panelDer() { const y = panel.scrollTop, mismo = panel.dataset.v === (elegida || '+'); panel.dataset.v = elegida || '+'; pintarPanel(); if (mismo) panel.scrollTop = y; }
+  function pintarPanel() {
     if (elegida && S.fotos.has(elegida)) {
       return inspector(panel, [elegida], { volver: `Añadir fotos a ${nombre}`, alVolver: () => { elegida = null; mosaico(); panelDer(); }, alQuitar: () => { elegida = null; } });
     }
@@ -151,7 +152,7 @@ export function vistaWeb(root, K) {
       ${c.length > cuantos ? `<button class="btn mas" id="pmas">Ver ${Math.min(150, c.length - cuantos)} más (${c.length - cuantos})</button>` : ''}${!c.length ? '<p class="vacio" style="grid-column:1/-1;padding:30px 0">No hay fotos con ese filtro.</p>' : ''}</div>
       <p class="ayuda">Clic en una foto para añadirla al final, o arrástrala al punto exacto del mosaico. Clic en una foto del mosaico para ver y editar sus datos.${esW ? ' Si la foto estaba en otro proyecto, se cambia a este.' : ''}</p>`;
     const pq = panel.querySelector('#pq');
-    pq.oninput = () => { filtro.q = pq.value; cuantos = 150; const pos = pq.selectionStart; panelDer(); const n = panel.querySelector('#pq'); n.focus(); n.setSelectionRange(pos, pos); };
+    pq.oninput = () => { filtro.q = pq.value; cuantos = 150; const pos = pq.selectionStart; pintarPanel(); const n = panel.querySelector('#pq'); n.focus(); n.setSelectionRange(pos, pos); };
     panel.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filtro.f = b.dataset.f; cuantos = 150; panelDer(); }));
     panel.querySelector('#pmas')?.addEventListener('click', () => { cuantos += 150; panelDer(); });
   }
