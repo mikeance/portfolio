@@ -37,7 +37,7 @@ for k, v in d['seleccion'].items():
 titles = {p: t for p, t in d.get('titulos', {}).items() if p in sel}
 portada = [p for p in d.get('portada', []) if p in sel]
 works = {p: w for p, w in d.get('works', {}).items() if p in sel}
-orden = {k: [p for p in v if p in sel or k.startswith('W:')] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L) / works (W:, pueden incluir fotos que solo existen en works)
+orden = {k: [p for p in v if p in sel or k.startswith(('W:', 'V:'))] for k, v in d.get('orden', {}).items() if v}  # orden manual de Faces (P) / Life (L) / works: página (W:) y hover (V:)
 work_of = {p: w for p, w in d.get('workOf', {}).items() if p in sel}  # work elegido en catalogo/textos.html ('' = ninguno: se saca de las carpetas)
 print('marcas:', {k: len(v) for k, v in d['seleccion'].items()}, '· fotos:', len(sel), '· ✕:', len(d['descartadas']), '· portada:', len(portada), '· títulos:', len(titles), '· works manuales:', len(works))
 
@@ -128,8 +128,9 @@ _sha_memo = {}
 def sha_of(path):
     if path not in _sha_memo: _sha_memo[path] = sha(path)
     return _sha_memo[path]
-orden_works = {k[2:]: v for k, v in orden.items() if k.startswith('W:')}  # orden manual de works/colecciones (editor del catálogo, 'W:<slug>')
-if (work_of or orden_works) and os.path.isdir(WORKS):
+orden_works = {k[2:]: v for k, v in orden.items() if k.startswith('W:')}  # orden de la página de cada work/colección ('W:<slug>')
+orden_hovers = {k[2:]: v for k, v in orden.items() if k.startswith('V:')}  # fila del hover de cada work/colección ('V:<slug>'), independiente
+if (work_of or orden_works or orden_hovers) and os.path.isdir(WORKS):
     folders = {}  # slug ('work' o 'work/seccion') -> ruta relativa a fotos/works
     def finfo(n):
         m = re.match(r'^(\d+)\s*[-._]?\s*(.+)$', n); return slugify((m.group(2) if m else n).strip())
@@ -192,15 +193,21 @@ if (work_of or orden_works) and os.path.isdir(WORKS):
     json.dump(web_titles, open(os.path.join(W, 'fotos', 'titulos.json'), 'w'), ensure_ascii=False, indent=1)
     if work_of: print('works: añadidas', added, '· quitadas', removed, ('· carpetas que no existen: ' + ', '.join(sorted(missing))) if missing else '')
     # orden manual de works / colecciones -> fotos/orden-works.json { slug: [rutas relativas a fotos/] }
-    web_ow = {}
-    for slug, lst in orden_works.items():
-        if slug not in folders: continue
-        paths = []
-        for p in lst:
-            src = srcpath(p)
-            if not os.path.exists(src): continue
-            for s2, fp in present.get(sha_of(src), []):
-                if s2 == slug or s2.startswith(slug + '/'): paths.append(os.path.relpath(fp, os.path.join(W, 'fotos')))
-        if paths: web_ow[slug] = paths
+    def rutas(ordenes):
+        out = {}
+        for slug, lst in ordenes.items():
+            if slug not in folders: continue
+            paths = []
+            for p in lst:
+                src = srcpath(p)
+                if not os.path.exists(src): continue
+                for s2, fp in present.get(sha_of(src), []):
+                    rel = os.path.relpath(fp, os.path.join(W, 'fotos'))
+                    if (s2 == slug or s2.startswith(slug + '/')) and rel not in paths: paths.append(rel)
+            if paths: out[slug] = paths
+        return out
+    web_ow, web_oh = rutas(orden_works), rutas(orden_hovers)
     json.dump(web_ow, open(os.path.join(W, 'fotos', 'orden-works.json'), 'w'), ensure_ascii=False, indent=1)
+    json.dump(web_oh, open(os.path.join(W, 'fotos', 'orden-hovers.json'), 'w'), ensure_ascii=False, indent=1)
     if web_ow: print('orden works:', {k: len(v) for k, v in web_ow.items()})
+    if web_oh: print('hovers:', {k: len(v) for k, v in web_oh.items()})

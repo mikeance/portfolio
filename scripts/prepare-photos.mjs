@@ -31,6 +31,9 @@ const ordIdx = {}; for (const [c, list] of Object.entries(orden)) list.forEach((
 //   clave sin "/" -> ordW (hover general del work y mosaico si no tiene colecciones); clave "work/colección" -> ordS (esa colección)
 const ordenW = existsSync(join(SRC, 'orden-works.json')) ? JSON.parse(readFileSync(join(SRC, 'orden-works.json'), 'utf8')) : {};
 const ordW = {}, ordS = {}; for (const [k, list] of Object.entries(ordenW)) list.forEach((rel, i) => { (k.includes('/') ? ordS : ordW)[rel] = i; });
+// Fila del hover de cada work / colección (independiente del orden de la página): fotos/orden-hovers.json, misma forma -> hovW / hovS
+const ordenH = existsSync(join(SRC, 'orden-hovers.json')) ? JSON.parse(readFileSync(join(SRC, 'orden-hovers.json'), 'utf8')) : {};
+const hovW = {}, hovS = {}; for (const [k, list] of Object.entries(ordenH)) list.forEach((rel, i) => { (k.includes('/') ? hovS : hovW)[rel] = i; });
 const titles = existsSync(join(SRC, 'titulos.json')) ? JSON.parse(readFileSync(join(SRC, 'titulos.json'), 'utf8')) : {};
 
 function* walk(dir) {
@@ -106,7 +109,7 @@ for (const file of walk(SRC)) {
   const ratio = +(w / h).toFixed(4);
   const rel = relative(SRC, file);
   const title = titles[rel] || '';
-  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), chroma, lum: +l.toFixed(3), lumB: lumBottom, ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}), ...(rel in ordW ? { ordW: ordW[rel] } : {}), ...(rel in ordS ? { ordS: ordS[rel] } : {}) });
+  photos.push({ id, ratio, hue: Math.round(hue), sat: +s.toFixed(3), chroma, lum: +l.toFixed(3), lumB: lumBottom, ...meta, src: rel, sha, ...(title ? { title } : {}), ...(rel in ordIdx ? { ord: ordIdx[rel] } : {}), ...(rel in ordW ? { ordW: ordW[rel] } : {}), ...(rel in ordS ? { ordS: ordS[rel] } : {}), ...(rel in hovW ? { hovW: hovW[rel] } : {}), ...(rel in hovS ? { hovS: hovS[rel] } : {}) });
 }
 
 writeFileSync(DATA, JSON.stringify(photos));

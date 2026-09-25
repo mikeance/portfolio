@@ -23,6 +23,8 @@ export interface Photo {
   ord?: number;   // posición manual fijada en el catálogo (Faces / Life)
   ordW?: number;  // WORKS: posición manual en el work (hover general; y mosaico si no tiene colecciones)
   ordS?: number;  // WORKS: posición manual dentro de su colección
+  hovW?: number;  // WORKS: posición en la fila del hover del work (independiente del orden de la página)
+  hovS?: number;  // WORKS: posición en la fila del hover de la colección
 }
 
 // Fotos sin texto (archivos que solo están en works): se usa el nombre de su colección o work, p. ej.

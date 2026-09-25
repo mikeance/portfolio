@@ -4,8 +4,9 @@ import { photos, type Photo } from './photos';
  *  fotos/works/<NN NOMBRE>/<NN SECCIÓN>/ que se muestran como secciones (colecciones) en ese orden.
  *  El número de carpeta fija el orden; el nombre (sin número) es el título; las fotos van por nombre de archivo.
  *  Un work con secciones se abre como lista de colecciones (igual que /works); cada colección tiene su mosaico.
- *  Orden manual (editor del catálogo, portada.html?sel=W:<slug>): ordW = orden del work, ordS = orden de la colección.
- *  `strip` (la fila del hover) = solo las fotos con orden manual, si lo hay; si no, todas.
+ *  Orden de la página (Estudio): ordW = orden del work, ordS = orden de la colección.
+ *  `strip` (la fila del hover) = la fila elegida en Estudio › Hovers (hovW / hovS), independiente de la página;
+ *  si no hay, todas en el orden de la página.
  *  `photos` (el mosaico) = todas: primero las del orden manual, después el resto por carpeta. */
 export interface Section { slug: string; name: string; order: number; photos: Photo[]; strip: Photo[]; href: string }
 export interface Work { slug: string; name: string; order: number; photos: Photo[]; strip: Photo[]; sections: Section[]; loose: Photo[]; href: string }
@@ -14,7 +15,7 @@ const byOrd = (a: Photo, b: Photo) => (a.ord ?? 0) - (b.ord ?? 0);
 const manual = (list: Photo[], key: (p: Photo) => number | undefined) => list.filter((p) => key(p) !== undefined).sort((a, b) => key(a)! - key(b)!);
 /** Las que tienen posición manual, en ese orden; después el resto tal cual. */
 const manualFirst = (list: Photo[], key: (p: Photo) => number | undefined) => [...manual(list, key), ...list.filter((p) => key(p) === undefined)];
-/** Fila del hover: las del orden manual si existe; si no, todas. */
+/** Fila del hover: las elegidas para el hover, en su orden; si no hay, todas (en el orden de la página). */
 const stripOf = (list: Photo[], key: (p: Photo) => number | undefined) => { const m = manual(list, key); return m.length ? m : list; };
 
 const map = new Map<string, Work>();
@@ -31,11 +32,11 @@ for (const p of photos) {
 export const works: Work[] = [...map.values()]
   .map((w) => {
     w.sections.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
-    for (const sec of w.sections) { sec.photos.sort(byOrd); sec.strip = stripOf(sec.photos, (p) => p.ordS); sec.photos = manualFirst(sec.photos, (p) => p.ordS); }
+    for (const sec of w.sections) { sec.photos = manualFirst(sec.photos.sort(byOrd), (p) => p.ordS); sec.strip = stripOf(sec.photos, (p) => p.hovS); }
     w.loose.sort(byOrd);
     const all = [...w.sections.flatMap((sec) => sec.photos), ...w.loose];
-    w.strip = stripOf(all, (p) => p.ordW);          // hover general en /works
     w.photos = manualFirst(all, (p) => p.ordW);     // mosaico (works sin colecciones)
+    w.strip = stripOf(w.photos, (p) => p.hovW);     // hover general en /works
     return w;
   })
   .filter((w) => w.photos.length > 0)
