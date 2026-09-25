@@ -12,10 +12,10 @@ const { closeLabel } = Astro.props;
 <style>
   #lightbox { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.97); display: grid; place-items: center; z-index: 50; cursor: zoom-out; }
   #lightbox[hidden] { display: none; }
-  /* Carrusel: una tira horizontal con "imán" en cada foto; en móvil se desliza con el dedo con inercia nativa */
-  #lb-track { position: absolute; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
-  #lb-track::-webkit-scrollbar { display: none; }
-  #lb-track :global(.slide) { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: center; scroll-snap-stop: always; display: grid; place-items: center; }
+  /* Carrusel: una tira de fotos que se mueve con transform; cada gesto (dedo, trackpad, flecha, clic) pasa exactamente una foto */
+  #lb-track { position: absolute; inset: 0; overflow: hidden; touch-action: pan-y pinch-zoom; }
+  #lb-track :global(#lb-rail) { display: flex; height: 100%; will-change: transform; transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+  #lb-track :global(.slide) { flex: 0 0 100%; width: 100%; height: 100%; display: grid; place-items: center; }
   #lb-track :global(img) { max-width: 86vw; max-height: 88vh; object-fit: contain; cursor: pointer; }
   #lb-prev[hidden], #lb-next[hidden] { display: none; }
   /* Flechas en los laterales, centradas en vertical */
