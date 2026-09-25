@@ -34,3 +34,12 @@ Consult these guides before working on related tasks:
 - Cambios hechos a mano en `fotos/works` (mover o renombrar carpetas) solo necesitan los pasos 2 a 5.
 - Nunca ejecutar `wrangler pages …` (reescribe la configuración). El sitio es un Worker con assets estáticos (`wrangler.jsonc`, `worker/index.js`).
 - Servidor de desarrollo: `astro dev --background` (ver arriba).
+
+## Instagram (plan de posts)
+
+- Editor: `catalogo/instagram.html` (file://). Posts con portada + carrusel, perfil 3:4 de vista previa, fotos sin usar a la derecha. Se guarda en el navegador; «Exportar plan» descarga `~/Downloads/instagram-plan (N).json`.
+- Aplicar un export: `node scripts/instagram-aplicar.mjs "~/Downloads/instagram-plan (N).json"` → guarda `catalogo/instagram-plan.json`, regenera `catalogo/instagram-data.js` y las carpetas listas para subir en `~/Desktop/RRSS/carruseles/` (1080×1350, borde blanco, `pie.txt`).
+- Tras cambiar fotos de la web: `python3 scripts/instagram-datos.py` (mantiene el plan). `--propuesta` rehace la propuesta automática desde cero.
+- Diapositivas: `id` o díptico `id1+id2` (dos horizontales en un 4:5). Posts con `formato: 'h'` se exportan a 1080×720 (3:2).
+- Stories: pestaña «Stories» del editor; la lógica (campaña de lanzamiento, 3 stories por post, encuesta de portada los sábados) está en `catalogo/instagram-stories.js`, compartida con el script de aplicar. Solo se guarda lo editado (`plan.campana`, `post.stories`). El export deja `stories/` (1080×1920) y `stories.txt` en cada carpeta, y carpetas `000 fecha Stories · …` para la campaña.
+- Fotos ya publicadas en Instagram: `catalogo/instagram-publicadas.json` (ids de la web, cruzados con la exportación de la cuenta en `~/Desktop/RRSS`).
