@@ -1,5 +1,5 @@
 ---
-/** About: texto corto en español y, debajo, en inglés en cursiva. */
+/** About: texto en español, la foto de Asturias y, debajo, el texto en inglés en cursiva. */
 import Base from '../layouts/Base.astro';
 import Scatter from '../components/Scatter.astro';
 import { useTranslations } from '../i18n/ui';
@@ -14,17 +14,17 @@ const w800 = foto ? (foto.ratio >= 1 ? 800 : Math.round(800 * foto.ratio)) : 0, 
 <Base lang="en" path="/about" title={t('seo.about.title')} description={t('seo.about.description')}>
   <main class="wrap about">
     <h1><Scatter text="About" class="now" /></h1>
-    {foto && (
-      <figure class="foto">
-        <img src={`/photos/${foto.id}-800.webp`} srcset={`/photos/${foto.id}-400.webp 400w, /photos/${foto.id}-800.webp ${w800}w, /photos/${foto.id}-1600.webp ${w1600}w`} sizes="(max-width: 560px) calc(100vw - 4rem), 34rem" alt={foto.title ?? ''} width="800" height={Math.round(800 / foto.ratio)} fetchpriority="high" decoding="async" />
-      </figure>
-    )}
     <div lang="es">
       <p>Miguel Antón, nacido en Madrid en 1993.</p>
       <p>Como fotógrafo estoy especializado en retrato, editorial y campañas, principalmente en película y con luz natural. También he llevado a cabo numerosos trabajos como director creativo y diseñador gráfico.</p>
       <p>Como cofundador de Scrap World he disparado casi todas sus campañas y he trabajado para marcas como Adidas, Atlantic Records, Clockers, Galag, Home Run NYC, Kangol, Minishopmadrid, Nike, Porsche, Real Madrid o Zalando.</p>
       <p class="contact">Contacto: <a href={`mailto:${site.email}`}>{site.email}</a><br />Instagram: <a href={ig} target="_blank" rel="noopener">@{site.instagram}</a></p>
     </div>
+    {foto && (
+      <figure class="foto">
+        <img src={`/photos/${foto.id}-800.webp`} srcset={`/photos/${foto.id}-400.webp 400w, /photos/${foto.id}-800.webp ${w800}w, /photos/${foto.id}-1600.webp ${w1600}w`} sizes="(max-width: 560px) calc(100vw - 4rem), 34rem" alt={foto.title ?? ''} width="800" height={Math.round(800 / foto.ratio)} decoding="async" />
+      </figure>
+    )}
     <div lang="en" class="en">
       <p>Miguel Antón, born in Madrid in 1993.</p>
       <p>As a photographer I specialise in portraits, editorial and campaigns, mostly on film and in natural light. I have also worked on numerous projects as a creative director and graphic designer.</p>
@@ -34,11 +34,11 @@ const w800 = foto ? (foto.ratio >= 1 ? 800 : Math.round(800 * foto.ratio)) : 0, 
   </main>
 </Base>
 <style>
-  .about { max-width: 34rem; }
+  .about { max-width: 56rem; }                 /* texto ancho en escritorio; la foto mantiene su tamaño, centrada */
   h1 { font-size: clamp(1.2rem, 2.4vw, 1.8rem); font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; margin: 0.6rem 0 1.6rem; }
   p { font-size: 0.95rem; line-height: 1.6; margin: 0 0 0.9rem; }
-  .en { margin-top: 1.8rem; color: var(--muted); font-style: italic; }
-  .foto { margin: 0 0 1.8rem; }
+  .en { color: var(--muted); font-style: italic; }
+  .foto { max-width: calc(34rem - 2 * var(--gutter)); margin: 1.8rem auto; }   /* mismo tamaño que antes */
   .foto img { display: block; width: 100%; height: auto; box-sizing: border-box; padding: 6px; background: var(--mat); }
   /* Móvil: misma disposición, letra más pequeña y más aire a los lados */
   @media (max-width: 560px) {
