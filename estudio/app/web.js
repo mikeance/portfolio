@@ -1,19 +1,21 @@
 // MIGUEL ANTÓN: la web por secciones (Portada, Editorial, Faces, Life y Works con sus colecciones).
 // Cada sección se ve como en mikeance.com (mismo mosaico) y se ordena arrastrando; a la derecha, fotos para añadir.
 import { packMosaic } from '/src/lib/mosaic-layout.js';
-import { S, CAT, ORDEN_CATS, alCambiar, cambiar, orden, miembros, restoWork, tieneCat, enWork, workDe, tituloDe, enWeb, esNueva, descartada, pendiente, ponerCat, ponerOrden, src, ratio, colorWork, nombreWork, sesion, esc, toast, nuevoWork } from './main.js';
+import { S, CAT, ORDEN_CATS, alCambiar, cambiar, orden, miembros, tieneCat, enWork, workDe, tituloDe, enWeb, esNueva, descartada, pendiente, ponerCat, ponerOrden, src, ratio, colorWork, nombreWork, sesion, esc, toast, nuevoWork } from './main.js';
 import { inspector } from './inspector.js';
+import { montarHovers } from './hovers.js';
 
 const REAL = { web: { W: 1504, cols: 5 }, movil: { W: 343, cols: 2 } };
 const leer = (k, d) => { try { return JSON.parse(localStorage.getItem('estudio-' + k)) ?? d; } catch { return d; } };
 const escribir = (k, v) => { try { localStorage.setItem('estudio-' + k, JSON.stringify(v)); } catch {} };
 
 export function vistaWeb(root, K) {
+  const esHov = K === 'V' || K.startsWith('V:');
   const esW = K.startsWith('W:'), slug = esW ? K.slice(2) : '', esHome = K === 'H';
-  if (!esW && !CAT[K]) { location.hash = '#/web/H'; return () => {}; }
-  if (esW && !S.workPorSlug.has(slug.split('/')[0])) { location.hash = '#/web/H'; return () => {}; }
-  const color = esW ? colorWork(slug) : CAT[K].c;
-  const nombre = esW ? nombreWork(slug) : CAT[K].nom;
+  if (!esW && !esHov && !CAT[K]) { location.hash = '#/web/H'; return () => {}; }
+  if ((esW && !S.workPorSlug.has(slug.split('/')[0])) || (K.startsWith('V:') && !S.workPorSlug.has(K.slice(2)))) { location.hash = '#/web/H'; return () => {}; }
+  const color = esHov ? 'var(--W)' : esW ? colorWork(slug) : CAT[K].c;
+  const nombre = esHov ? 'Hovers' : esW ? nombreWork(slug) : CAT[K].nom;
   root.innerHTML = `<div class="web"><aside class="sb" id="sb"></aside>
     <section class="centro" id="centro" style="--c:${color}"><div class="cab" id="cab"></div><div class="bloque"><div class="mos" id="mos"></div></div><div class="bloque" id="resto"></div></section>
     <aside class="panel" id="panel"></aside></div>`;
@@ -23,6 +25,7 @@ export function vistaWeb(root, K) {
   let filtro = { q: '', f: '' }, cuantos = 150;
   let vista = leer('vista', 'web'); const zoom = leer('zoom', { web: 100, movil: 100 });
   let abiertos = new Set(leer('abiertos', [])); if (esW) abiertos.add(slug.split('/')[0]);
+  let arrastre = null, dragY = null, raf = 0, ultimo = 0;
 
   // ---------- barra lateral ----------
   function lateral() {
@@ -30,6 +33,7 @@ export function vistaWeb(root, K) {
     const item = (k, nom, c, extra = '', cls = '') => `<div class="it ${cls} ${k === K ? 'on' : ''}" data-k="${esc(k)}" style="--c:${c}"><span class="dot"></span><span class="nom">${esc(nom)}</span><span class="n">${n(k)}</span>${extra}</div>`;
     let h = `<h3>Web</h3>` + ORDEN_CATS.map((k) => item(k, CAT[k].nom, CAT[k].c)).join('');
     h += `<h3>Works <button data-nuevo="" title="Crear un work nuevo">+ Nuevo</button></h3>`;
+    h += `<div class="it ${esHov ? 'on' : ''}" data-k="V" style="--c:var(--W)"><span class="hvico">≋</span><span class="nom">Hovers</span><span class="n">${S.works.length}</span></div>`;
     for (const w of S.works) {
       const hijos = w.children.length, ab = abiertos.has(w.slug);
       h += item('W:' + w.slug, w.name, w.color, hijos ? `<button class="tg ${ab ? 'abierto' : ''}" data-tg="${w.slug}" title="Colecciones">▶</button>` : '');
@@ -58,12 +62,20 @@ export function vistaWeb(root, K) {
     else if (!tieneCat(p, k)) { ponerCat([p], k, true); toast(`Añadida a ${CAT[k].nom}`, true); }
   });
 
+  if (esHov) {
+    lateral();
+    const fin = montarHovers($('#centro'), panel, K);
+    const offH = alCambiar(lateral);
+    return () => { fin(); offH(); };
+  }
+
   // ---------- cabecera ----------
   function cabecera() {
     const lista = orden(K), total = miembros(K).length;
     const enlace = esHome ? 'https://mikeance.com/' : esW ? `https://mikeance.com/works/${slug}/` : `https://mikeance.com/photography/${{ E: 'editorial', P: 'faces', L: 'lifestyle' }[K]}/`;
+    const w0 = slug.split('/')[0], conCol = esW && !slug.includes('/') && S.workPorSlug.get(w0)?.children.length;
     const sub = esHome ? `${lista.length} fotos · el orden de la portada` : esW
-      ? `${lista.length === total ? `${total} fotos` : `${lista.length} de ${total} fotos en el hover`} · arrastra para ordenar el hover y la página`
+      ? (conCol ? `${total} fotos · en la web se abre como lista de colecciones: el orden de cada página se edita en su colección` : `${total} fotos · arrastra para ordenar la página del proyecto · ✕ la saca del proyecto`) + ` · <a href="#/web/${slug.includes('/') ? 'V:' + w0 : 'V'}" style="text-decoration:underline;text-decoration-color:var(--mut2)">editar su hover</a>`
       : `${total} fotos · arrastra para ordenar · ✕ la quita de ${nombre}`;
     const [w, c] = slug.split('/');
     const titulo = esW && c ? `<a href="#/web/W:${w}" style="color:var(--mut)">${esc(nombreWork(w))}</a> <small>›</small> ${esc(nombreWork(slug, true))}` : esc(nombre);
@@ -84,7 +96,7 @@ export function vistaWeb(root, K) {
     mos.querySelector('.vacio')?.remove();
     const vivos = new Set(lista);
     for (const [p, f] of nodos) if (!vivos.has(p)) { f.remove(); nodos.delete(p); }
-    const quitar = esHome ? 'Quitar de la portada' : esW ? 'Quitar del hover (sigue en el proyecto)' : `Quitar de ${nombre}`;
+    const quitar = esHome ? 'Quitar de la portada' : esW ? `Sacar de ${nombre}` : `Quitar de ${nombre}`;
     lista.forEach((p, i) => {
       let f = nodos.get(p);
       if (!f) {
@@ -115,14 +127,7 @@ export function vistaWeb(root, K) {
   }
 
   // ---------- resto (works: fotos del proyecto que no están en el hover) ----------
-  function resto() {
-    const el = $('#resto');
-    if (!esW) { el.innerHTML = ''; return; }
-    const r = restoWork(K);
-    el.innerHTML = r.length ? `<h2>Resto de ${esc(nombreWork(slug, true))} <span>· no salen en el hover; en la página van detrás. Clic o arrástralas para meterlas en el hover.</span></h2>
-      <div class="resto">${r.map((p) => `<div class="t" draggable="true" data-p="${esc(p)}" title="${esc(tituloDe(p) || sesion(p))}"><img loading="lazy" src="${src(p, 400)}" alt=""></div>`).join('')}</div>` : '';
-  }
-  $('#resto').addEventListener('click', (e) => { const t = e.target.closest('.t'); if (t) { ponerOrden(K, [...orden(K), t.dataset.p]); toast('Añadida al hover', true); } });
+  function resto() { $('#resto').innerHTML = ''; }
 
   // ---------- panel derecho: añadir fotos / inspector ----------
   function candidatas() {
@@ -165,7 +170,7 @@ export function vistaWeb(root, K) {
       if (esHome) { e.portada = lista; return; }
       if (esW) {
         e.workOf[p] = slug;
-        for (const k of Object.keys(e.orden)) { const s = k.slice(2); if (k.startsWith('W:') && slug !== s && !slug.startsWith(s + '/')) e.orden[k] = e.orden[k].filter((x) => x !== p); }
+        for (const k of Object.keys(e.orden)) { const s = k.slice(2); if ((k.startsWith('W:') || k.startsWith('V:')) && slug !== s && !slug.startsWith(s + '/')) e.orden[k] = e.orden[k].filter((x) => x !== p); }
         e.orden[K] = lista; return;
       }
       if (!(e.seleccion[K] ||= []).includes(p)) e.seleccion[K].push(p);
@@ -174,8 +179,7 @@ export function vistaWeb(root, K) {
     toast(otro ? `Movida a ${nombreWork(slug)} (estaba en ${nombreWork(otro)})` : `Añadida a ${esW ? nombreWork(slug) : nombre}`, true);
   }
 
-  // ---------- arrastrar (mosaico, resto y panel) ----------
-  let arrastre = null, dragY = null, raf = 0, ultimo = 0;
+  // ---------- arrastrar (mosaico y panel) ----------
   const finArrastre = () => { arrastre = null; dragY = null; root.querySelectorAll('.drag,.over').forEach((x) => x.classList.remove('drag', 'over')); };
   const centro = $('#centro');
   const auto = () => {
@@ -211,7 +215,11 @@ export function vistaWeb(root, K) {
     const f = e.target.closest('figure'); if (!f) return; const p = f.dataset.p;
     if (e.target.classList.contains('x')) {
       if (esHome) ponerCat([p], 'H', false);
-      else if (esW) { const l = orden(K).filter((x) => x !== p); cambiar((st) => { st.orden[K] = l.length ? l : [...orden(K)].filter((x) => x !== p); }); toast('Quitada del hover (sigue en el proyecto)', true); }
+      else if (esW) {
+        const de = workDe(p);
+        cambiar((st) => { st.workOf[p] = ''; for (const k of Object.keys(st.orden)) if (k.startsWith('W:') || k.startsWith('V:')) st.orden[k] = st.orden[k].filter((x) => x !== p); });
+        toast(enWeb(p) ? `Sacada de ${nombreWork(de)}` : `Sacada de ${nombreWork(de)}: ya no está en ninguna sección, al publicar saldrá de la web`, true);
+      }
       else ponerCat([p], K, false);
       if (elegida === p) elegida = null;
       return;

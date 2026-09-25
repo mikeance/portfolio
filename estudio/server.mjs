@@ -55,6 +55,29 @@ function works() {
   }).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 }
 
+// Orden actual de la web para cada work y colección (igual que src/lib/works.ts), en rutas de FOTO:
+// 'W:<slug>' = página (mosaico) y 'V:<slug>' = fila del hover.
+function ordenWeb(web, fotoPorSha) {
+  const byOrd = (a, b) => (a.ord ?? 0) - (b.ord ?? 0);
+  const manual = (l, k) => l.filter((p) => p[k] !== undefined).sort((a, b) => a[k] - b[k]);
+  const manualFirst = (l, k) => [...manual(l, k), ...l.filter((p) => p[k] === undefined)];
+  const stripOf = (l, k) => { const m = manual(l, k); return m.length ? m : l; };
+  const ws = new Map();
+  for (const p of web) {
+    if (p.cat !== 'work' || !p.work) continue;
+    const w = ws.get(p.work) || ws.set(p.work, { secs: new Map(), loose: [] }).get(p.work);
+    if (p.section) (w.secs.get(p.section) || w.secs.set(p.section, { order: p.sectionOrder ?? 999, photos: [] }).get(p.section)).photos.push(p); else w.loose.push(p);
+  }
+  const out = {}, rutas = (l) => [...new Set(l.map((p) => fotoPorSha[p.sha]).filter(Boolean))];
+  for (const [slug, w] of ws) {
+    const secs = [...w.secs.entries()].sort((a, b) => a[1].order - b[1].order);
+    for (const [s, sec] of secs) { const ph = manualFirst(sec.photos.sort(byOrd), 'ordS'); out[`W:${slug}/${s}`] = rutas(ph); out[`V:${slug}/${s}`] = rutas(stripOf(ph, 'hovS')); sec.photos = ph; }
+    const all = [...secs.flatMap(([, sec]) => sec.photos), ...w.loose.sort(byOrd)], ph = manualFirst(all, 'ordW');
+    out['W:' + slug] = rutas(ph); out['V:' + slug] = rutas(stripOf(ph, 'hovW'));
+  }
+  return out;
+}
+
 // ---------- datos para la app ----------
 function datos() {
   const publicado = load(PUBLICADO, null);
@@ -97,10 +120,12 @@ function datos() {
     fotos.push({ p, id: w?.id || null, r: r ? +r.toFixed(4) : 0, sat: w?.sat, nueva: !mP[p] && !mE[p] ? 1 : 0 });
   }
   if (metaSucia) { writeFileSync(META, JSON.stringify(meta)); metaSucia = false; }
+  const fotoPorSha = {}; for (const [p, x] of Object.entries(webPorFoto)) fotoPorSha[x.sha] ||= p;
+  for (const f of fotos) { const m = meta[f.p]; if (m?.sha && !fotoPorSha[m.sha]) fotoPorSha[m.sha] = f.p; }
   return {
     baseActual: huella(JSON.stringify(publicado)),
     publicado, estado, borrador: borrador ? { guardado: borrador.guardado, base: borrador.base, baseActual: huella(JSON.stringify(publicado)) } : null,
-    fotos, works: works(), ordenAuto: catalogo.ordenAuto || {}, nuevas: nuevas.length,
+    fotos, works: works(), ordenAuto: catalogo.ordenAuto || {}, ordenWeb: ordenWeb(web, fotoPorSha), nuevas: nuevas.length,
   };
 }
 

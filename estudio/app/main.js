@@ -43,18 +43,21 @@ export function miembros(k) {
   if (k.startsWith('W:')) { const s = k.slice(2); return [...S.fotos.keys()].filter((p) => enWork(p, s)); }
   return [...S.fotos.keys()].filter((p) => marcas(p).includes(k));
 }
-/** Orden de una sección tal y como sale en la web: el manual (si lo hay) y detrás el automático. En works, el orden manual
- *  es la fila del hover (puede ser una parte); si no hay, el hover son todas en el orden actual. */
+/** Orden de una sección tal y como sale en la web: el manual (si lo hay) y detrás el automático
+ *  (en works, el de la página del proyecto; el hover va aparte, ver hover()). */
+const base = (k) => (k.startsWith('W:') || k.startsWith('V:') ? S.datos.ordenWeb?.[k] : S.datos.ordenAuto[k]) || [];
 export function orden(k) {
   if (k === 'H') return miembros('H');
   const mem = new Set(miembros(k)), man = (S.estado.orden?.[k] || []).filter((p) => mem.has(p));
-  const out = [...new Set(man)];
-  if (k.startsWith('W:') && out.length) return out;
-  const vistos = new Set(out);
-  for (const p of [...(S.datos.ordenAuto[k] || []), ...mem]) if (mem.has(p) && !vistos.has(p)) { vistos.add(p); out.push(p); }
+  const out = [...new Set(man)], vistos = new Set(out);
+  for (const p of [...base(k), ...mem]) if (mem.has(p) && !vistos.has(p)) { vistos.add(p); out.push(p); }
   return out;
 }
-export const restoWork = (k) => { const h = new Set(orden(k)); return miembros(k).filter((p) => !h.has(p)); };
+/** Fila del hover de un work o colección: la elegida en Hovers (V:) o, si no hay, todas en el orden de la página. */
+export function hover(slug) {
+  const mem = new Set(miembros('W:' + slug)), l = [...new Set((S.estado.orden?.['V:' + slug] || []).filter((p) => mem.has(p)))];
+  return l.length ? l : orden('W:' + slug);
+}
 
 // ---------- cambios ----------
 export function cambiar(fn, msg) {
@@ -101,7 +104,7 @@ export function ponerWork(ps, slug) {
     for (const p of ps) {
       const antes = e.workOf[p] || '';
       e.workOf[p] = slug;
-      if (antes && antes !== slug) for (const k of Object.keys(e.orden)) { const s = k.slice(2); if (k.startsWith('W:') && slug !== s && !slug.startsWith(s + '/')) e.orden[k] = e.orden[k].filter((x) => x !== p); }
+      if (antes && antes !== slug) for (const k of Object.keys(e.orden)) { const s = k.slice(2); if ((k.startsWith('W:') || k.startsWith('V:')) && slug !== s && !slug.startsWith(s + '/')) e.orden[k] = e.orden[k].filter((x) => x !== p); }
       if (slug) for (const k of ['W:' + slug, 'W:' + slug.split('/')[0]]) if (e.orden[k]?.length && !e.orden[k].includes(p)) e.orden[k].push(p);
       e.descartadas = e.descartadas.filter((x) => x !== p);
     }
@@ -193,8 +196,8 @@ export function resumen() {
   const reordenada = (a = [], b = []) => { const sa = new Set(a), sb = new Set(b); return !igual(a.filter((p) => sb.has(p)), b.filter((p) => sa.has(p))); };
   if (reordenada(pub.portada, e.portada)) r.ordenes.push('Portada');
   for (const k of new Set([...Object.keys(pub.orden || {}), ...Object.keys(e.orden || {})])) {
-    const a = (pub.orden || {})[k] || [], b = (e.orden || {})[k] || [];
-    if (reordenada(a.length ? a : S.datos.ordenAuto[k], b.length ? b : S.datos.ordenAuto[k]) || (a.length && !b.length && k.startsWith('W:'))) r.ordenes.push(k.startsWith('W:') ? nombreWork(k.slice(2)) : CAT[k]?.nom || k);
+    const a = (pub.orden || {})[k] || [], b = (e.orden || {})[k] || [], v = k.startsWith('V:');
+    if (reordenada(a.length ? a : base(k), b.length ? b : base(k)) || (v && !igual(a, b)) || (a.length && !b.length && k.startsWith('W:'))) r.ordenes.push(v ? 'hover de ' + nombreWork(k.slice(2)) : k.startsWith('W:') ? nombreWork(k.slice(2)) : CAT[k]?.nom || k);
   }
   r.ordenes = [...new Set(r.ordenes)];
   r.total = r.nuevas + r.quitadas + r.secciones + r.titulos + r.works + r.ordenes.length;
@@ -350,5 +353,15 @@ export async function cargar(tras = false) {
 S.base = null;
 $('#vista').innerHTML = '<div class="cargando">Cargando…</div>';
 cargar().catch((e) => { $('#vista').innerHTML = `<div class="vacio">No se ha podido cargar: ${esc(e.message)}</div>`; });
+// si el Estudio se actualiza (cambia el servidor), se avisa para recargar; si el servidor no responde, también
+let version = null;
+setInterval(async () => {
+  try {
+    const r = await (await fetch('/api/ping', { cache: 'no-store' })).json();
+    if (version === null) version = r.v;
+    else if (r.v !== version && $('#aviso').hidden) { $('#aviso').hidden = false; $('#aviso').innerHTML = 'Hay una versión nueva del Estudio. <button onclick="location.reload()">Recargar</button>'; }
+  } catch { if (!publicando) $('#estado').textContent = 'Sin conexión: abre el Estudio desde el Dock'; }
+}, 15000);
+fetch('/api/ping').then((r) => r.json()).then((r) => (version = r.v)).catch(() => {});
 // si ya había una publicación en marcha (p. ej. al recargar la página), se sigue
 fetch('/api/publicar').then((r) => r.json()).then((j) => { if (j.estado === 'corriendo') { publicando = true; seguir(); } });
