@@ -113,3 +113,24 @@ export function packMosaic(ratios, W, cols, opt = {}) {
   ratios.forEach((r, i) => { if (pos[i]) height = Math.max(height, pos[i].y + hgt(pos[i].w, r)); });
   return { pos, height };
 }
+
+/**
+ * Orden de lectura del mosaico tal y como se ve: de izquierda a derecha y, al acabar la «fila», hacia abajo.
+ * Una fila son las fotos cuyo borde superior está cerca del de la más alta que queda (media foto normal).
+ * Lo usan el visor de la web (siguiente / anterior) y los números del Estudio.
+ * @param {{x: number, y: number, w: number}[]} pos  posiciones de packMosaic
+ * @param {number[]} ratios
+ * @returns {number[]} índices de las fotos en orden de lectura
+ */
+export function readingOrder(pos, ratios, opt = {}) {
+  const PAD = opt.pad ?? 12;
+  const items = pos.map((p, i) => (p ? { i, x: p.x, y: p.y, h: (p.w - PAD) / ratios[i] + PAD } : null)).filter(Boolean);
+  if (!items.length) return [];
+  const hs = items.map((it) => it.h).sort((a, b) => a - b), tol = hs[Math.floor(hs.length / 2)] * 0.5;
+  const rest = items.sort((a, b) => a.y - b.y || a.x - b.x), out = [];
+  while (rest.length) {
+    const top = rest[0].y, fila = rest.filter((it) => it.y <= top + tol).sort((a, b) => a.x - b.x);
+    for (const it of fila) { out.push(it.i); rest.splice(rest.indexOf(it), 1); }
+  }
+  return out;
+}

@@ -40,17 +40,21 @@ const SIZES_W = '(min-width: 1500px) 40vw, (min-width: 900px) 50vw, (min-width: 
 </style>
 
 <script>
-  import { packMosaic } from '../lib/mosaic-layout.js';
+  import { packMosaic, readingOrder } from '../lib/mosaic-layout.js';
   const GAP = 10, PAD = 12; // hueco entre fotos y marco (6px por lado)
   const colCount = () => (innerWidth >= 1500 ? 5 : innerWidth >= 900 ? 4 : innerWidth >= 560 ? 3 : 2);
 
   // Colocación en src/lib/mosaic-layout.js (la misma que usa el editor de orden del catálogo):
   // primera fila alineada arriba, verticales a la altura de una de 35 mm, horizontales a dos columnas, sin huecos.
+  // orden en que se ven las fotos (de izquierda a derecha y hacia abajo): lo sigue el visor al pasar de una a otra
+  const lectura = new Map<HTMLElement, HTMLElement[]>();
   function layout(grid: HTMLElement) {
     const figs = [...grid.querySelectorAll('figure')] as HTMLElement[];
-    const { pos, height } = packMosaic(figs.map((el) => +el.dataset.r!), grid.clientWidth, colCount(), { gap: GAP, pad: PAD });
+    const ratios = figs.map((el) => +el.dataset.r!);
+    const { pos, height } = packMosaic(ratios, grid.clientWidth, colCount(), { gap: GAP, pad: PAD });
     figs.forEach((el, i) => { const p = pos[i]; el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px`; });
     grid.style.height = `${Math.ceil(height)}px`;
+    lectura.set(grid, readingOrder(pos, ratios, { pad: PAD }).map((i) => figs[i]));
   }
 
   const grids = [...document.querySelectorAll<HTMLElement>('.grid')];
@@ -66,20 +70,30 @@ const SIZES_W = '(min-width: 1500px) 40vw, (min-width: 900px) 50vw, (min-width: 
   // Visor (uno por página, ver Lightbox.astro): tira de fotos movida con transform. Cada gesto pasa exactamente una foto
   // y siempre en el orden numerado: dedo en móvil (la foto sigue al dedo), dos dedos en el trackpad (una por gesto,
   // aunque haya inercia), flechas, teclado o clic en la mitad derecha/izquierda de la pantalla. No da la vuelta al final.
+  // Va en el orden en que se ven las fotos: de izquierda a derecha y hacia abajo (cambia con el ancho de la ventana).
   const lb = document.getElementById('lightbox');
   if (lb) {
     const track = document.getElementById('lb-track')!;
     const rail = document.createElement('div'); rail.id = 'lb-rail'; track.appendChild(rail);
     const lbTitle = lb.querySelector('p')!;
     const prevBtn = document.getElementById('lb-prev')!, nextBtn = document.getElementById('lb-next')!;
-    const all = [...document.querySelectorAll<HTMLElement>('.grid figure')];
     const touch = matchMedia('(hover: none)').matches;
-    // una "diapositiva" por foto; la imagen se carga cuando está cerca
-    const slides = all.map((fig) => {
-      const d = document.createElement('div'); d.className = 'slide';
-      const img = document.createElement('img'); img.alt = fig.dataset.title || ''; img.dataset.src = `/photos/${fig.dataset.id}-1600.webp`; img.draggable = false;
-      d.appendChild(img); rail.appendChild(d); return d;
-    });
+    // una "diapositiva" por foto, en el orden en que se ven; la imagen se carga cuando está cerca (y no se vuelve a pedir)
+    let all: HTMLElement[] = [], slides: HTMLElement[] = [];
+    const slideDe = new Map<HTMLElement, HTMLElement>();
+    const montar = () => {
+      all = grids.flatMap((g) => lectura.get(g) || []);
+      slides = all.map((fig) => {
+        let d = slideDe.get(fig);
+        if (!d) {
+          d = document.createElement('div'); d.className = 'slide';
+          const img = document.createElement('img'); img.alt = fig.dataset.title || ''; img.dataset.src = `/photos/${fig.dataset.id}-1600.webp`; img.draggable = false;
+          d.appendChild(img); slideDe.set(fig, d);
+        }
+        return d;
+      });
+      rail.replaceChildren(...slides);
+    };
     let idx = 0, noClickUntil = 0;
     const load = (i: number) => { for (const k of [i - 1, i, i + 1, i + 2]) { const img = slides[k]?.querySelector('img'); if (img && !img.src) img.src = img.dataset.src!; } };
     const place = (anim: boolean, extra = 0) => { rail.style.transition = anim ? '' : 'none'; rail.style.transform = `translate3d(${-idx * track.clientWidth + extra}px,0,0)`; };
@@ -91,12 +105,13 @@ const SIZES_W = '(min-width: 1500px) 40vw, (min-width: 900px) 50vw, (min-width: 
       place(anim);
     };
     const step = (d: number) => goTo(idx + d);
-    const open = (i: number) => { lb.hidden = false; goTo(i, false); };
+    const open = (fig: HTMLElement) => { montar(); lb.hidden = false; goTo(all.indexOf(fig), false); };
     const closeLb = () => { lb.hidden = true; };
-    addEventListener('resize', () => { if (!lb.hidden) place(false); });
+    // al cambiar el ancho puede cambiar el número de columnas y con él el orden en que se ven
+    addEventListener('resize', () => { if (lb.hidden) return; const f = all[idx]; montar(); idx = Math.max(0, all.indexOf(f)); place(false); });
     document.addEventListener('click', (e) => {
       const fig = (e.target as HTMLElement).closest('.grid figure') as HTMLElement | null;
-      if (fig) open(all.indexOf(fig));
+      if (fig) open(fig);
     });
     lb.addEventListener('click', (e) => {
       if (Date.now() < noClickUntil) return;   // el clic que llega al terminar un arrastre no cuenta

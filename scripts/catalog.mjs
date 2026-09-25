@@ -147,6 +147,6 @@ const summary = {
 };
 writeFileSync(join(OUT, 'catalogo.json'), JSON.stringify({ ...summary, photos }, null, 1));
 // Copia del algoritmo del mosaico de la web para el editor de orden (sin «export», para abrirlo con file://)
-writeFileSync(join(OUT, 'mosaic-layout.js'), readFileSync(join(ROOT, 'src/lib/mosaic-layout.js'), 'utf8').replace(/^export function packMosaic/m, 'function packMosaic') + '\nwindow.packMosaic = packMosaic;\n');
+writeFileSync(join(OUT, 'mosaic-layout.js'), readFileSync(join(ROOT, 'src/lib/mosaic-layout.js'), 'utf8').replace(/^export function /gm, 'function ') + '\nwindow.packMosaic = packMosaic;\nwindow.readingOrder = readingOrder;\n');
 writeFileSync(join(OUT, 'catalog-data.js'), `window.CATALOG=${JSON.stringify({ base: 'file://' + FOTO + '/', ...summary, photos })};`);
 console.log(`✔ catálogo: ${photos.length} fotos · ${photos.filter((p) => p.err).length} con error · ${others.length} otros archivos · ${dupFiles.length} en _DUPLICADOS`);

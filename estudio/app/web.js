@@ -1,6 +1,6 @@
 // MIGUEL ANTÓN: la web por secciones (Portada, Editorial, Faces, Life y Works con sus colecciones).
 // Cada sección se ve como en mikeance.com (mismo mosaico) y se ordena arrastrando; a la derecha, fotos para añadir.
-import { packMosaic } from '/src/lib/mosaic-layout.js';
+import { packMosaic, readingOrder } from '/src/lib/mosaic-layout.js';
 import { S, CAT, ORDEN_CATS, alCambiar, cambiar, orden, miembros, tieneCat, enWork, workDe, tituloDe, enWeb, esNueva, descartada, pendiente, ponerCat, ponerOrden, src, ratio, colorWork, nombreWork, sesion, esc, toast, nuevoWork } from './main.js';
 import { inspector } from './inspector.js';
 import { montarHovers } from './hovers.js';
@@ -104,18 +104,23 @@ export function vistaWeb(root, K) {
         f.innerHTML = `<img alt="" decoding="async"><span class="n" title="Clic para mover a otra posición"></span><button class="x" title="${quitar}">✕</button>`;
         nodos.set(p, f);
       }
-      f.querySelector('.n').textContent = i + 1;
       f.classList.toggle('sel', p === elegida); f.classList.toggle('pend', pendiente(p));
       f.title = tituloDe(p) || sesion(p);
       mos.appendChild(f);          // también reordena
     });
     colocar();
   }
+  // Los números siguen el orden en que se ven las fotos (de izquierda a derecha y hacia abajo), el mismo que el visor de la web
+  let lectura = [];
   function colocar() {
     const figs = [...mos.querySelectorAll('figure')]; if (!figs.length) return;
     const real = REAL[vista], disp = $('#centro').clientWidth - 56;
     const Wv = vista === 'web' ? disp * zoom.web / 100 : Math.min(disp, real.W * zoom.movil / 100), k = Wv / real.W;
-    const { pos, height } = packMosaic(figs.map((f) => ratio(f.dataset.p)), real.W, real.cols, { gap: 10, pad: 12 });
+    const ratios = figs.map((f) => ratio(f.dataset.p));
+    const { pos, height } = packMosaic(ratios, real.W, real.cols, { gap: 10, pad: 12 });
+    const ord = readingOrder(pos, ratios, { pad: 12 });
+    lectura = ord.map((i) => figs[i].dataset.p);
+    ord.forEach((i, n) => { figs[i].querySelector('.n').textContent = n + 1; });
     mos.style.width = Wv + 'px'; mos.style.height = Math.ceil(height * k) + 'px'; mos.style.setProperty('--pad', Math.max(1, 6 * k) + 'px');
     const tile = (Wv - (real.cols - 1) * 10 * k) / real.cols;
     mos.classList.toggle('pequeno', tile < 120); mos.classList.toggle('diminuto', tile < 60);
@@ -208,7 +213,8 @@ export function vistaWeb(root, K) {
     const destino = f?.dataset.p || null;
     if (a.deMosaico) {
       if (!destino || destino === a.p) return;
-      const l = orden(K), from = l.indexOf(a.p); l.splice(from, 1); l.splice(l.indexOf(destino) + (from <= l.indexOf(destino) ? 1 : 0), 0, a.p);
+      const l = orden(K).filter((x) => x !== a.p), despues = lectura.indexOf(a.p) < lectura.indexOf(destino);
+      l.splice(l.indexOf(destino) + (despues ? 1 : 0), 0, a.p);
       ponerOrden(K, l);
     } else insertar(a.p, destino);
   });
@@ -226,10 +232,12 @@ export function vistaWeb(root, K) {
       return;
     }
     if (e.target.classList.contains('n')) {
-      const l = orden(K), from = l.indexOf(p);
-      const v = await (await import('./main.js')).pedir(`Mover a la posición (1–${l.length})`, '', String(from + 1)); if (!v) return;
-      const to = Math.min(l.length, Math.max(1, parseInt(v, 10) || from + 1)) - 1; if (to === from) return;
-      l.splice(from, 1); l.splice(to, 0, p); ponerOrden(K, l);
+      const from = lectura.indexOf(p);
+      const v = await (await import('./main.js')).pedir(`Mover a la posición (1–${lectura.length})`, '', String(from + 1)); if (!v) return;
+      const to = Math.min(lectura.length, Math.max(1, parseInt(v, 10) || from + 1)) - 1; if (to === from) return;
+      // se coloca junto a la foto que ahora ocupa esa posición (antes si sube, después si baja)
+      const destino = lectura[to], l = orden(K).filter((x) => x !== p);
+      l.splice(l.indexOf(destino) + (to > from ? 1 : 0), 0, p); ponerOrden(K, l);
       requestAnimationFrame(() => { const g = nodos.get(p); if (g) { g.scrollIntoView({ block: 'center', behavior: 'smooth' }); g.classList.add('over'); setTimeout(() => g.classList.remove('over'), 1400); } });
       return;
     }
