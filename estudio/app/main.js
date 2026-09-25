@@ -358,10 +358,10 @@ let version = null;
 setInterval(async () => {
   try {
     const r = await (await fetch('/api/ping', { cache: 'no-store' })).json();
-    if (version === null) version = r.v;
-    else if (r.v !== version && $('#aviso').hidden) { $('#aviso').hidden = false; $('#aviso').innerHTML = 'Hay una versión nueva del Estudio. <button onclick="location.reload()">Recargar</button>'; }
+    if (version === null) version = r.app;
+    else if (r.app !== version && $('#aviso').hidden) { $('#aviso').hidden = false; $('#aviso').innerHTML = 'Hay una versión nueva del Estudio. <button onclick="location.reload()">Recargar</button>'; }
   } catch { if (!publicando) $('#estado').textContent = 'Sin conexión: abre el Estudio desde el Dock'; }
 }, 15000);
-fetch('/api/ping').then((r) => r.json()).then((r) => (version = r.v)).catch(() => {});
+fetch('/api/ping').then((r) => r.json()).then((r) => (version = r.app)).catch(() => {});
 // si ya había una publicación en marcha (p. ej. al recargar la página), se sigue
 fetch('/api/publicar').then((r) => r.json()).then((j) => { if (j.estado === 'corriendo') { publicando = true; seguir(); } });

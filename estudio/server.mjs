@@ -225,7 +225,10 @@ const cuerpo = (req) => new Promise((r, j) => { let b = ''; req.on('data', (c) =
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x'); const path = decodeURIComponent(url.pathname);
   try {
-    if (path === '/api/ping') return json(res, { ok: 1, v: VERSION });
+    if (path === '/api/ping') {   // v: versión del servidor (el lanzador lo reinicia si cambia); app: la de las pantallas (la app avisa para recargar)
+      const app = Math.max(VERSION, ...readdirSync(join(ROOT, 'estudio/app')).map((n) => Math.floor(statSync(join(ROOT, 'estudio/app', n)).mtimeMs / 1000)));
+      return json(res, { ok: 1, v: VERSION, app });
+    }
     if (path === '/api/datos') { const d = datos(); await completarProporciones(d); return json(res, d); }
     if (path === '/api/estado' && req.method === 'PUT') {
       const b = await cuerpo(req);
