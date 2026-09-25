@@ -5,7 +5,9 @@
 - Portada ordenada en fotos/portada/001_… y títulos en fotos/titulos.json.
 - Actualiza catalogo/preseleccion.json, portada.json, titulos.json y oculta lo no marcado (ocultas.json).
 
-Uso: python3 scripts/aplicar-seleccion.py [ruta/al/export.json] [--no-ocultar]
+Uso: python3 scripts/aplicar-seleccion.py [ruta/al/export.json] [--no-ocultar] [--previo estado-anterior.json]
+- Marca «W» (seleccion.W): foto en la web sin categoría (solo en works o en la portada); la usa la app Estudio.
+- --previo: estado publicado anterior; lo que estaba en la web y ya no está sale también de works.
 Después: node scripts/prepare-photos.mjs && node scripts/catalog.mjs && npm run build && npx wrangler deploy
 """
 import glob, json, os, re, shutil, subprocess, sys
@@ -21,7 +23,8 @@ def srcpath(p):
     q = os.path.join(FOTO, r['retocada']) if r else None
     return q if q and os.path.exists(q) else os.path.join(FOTO, p)
 
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
+previo = sys.argv[sys.argv.index('--previo') + 1] if '--previo' in sys.argv else None
+args = [a for a in sys.argv[1:] if not a.startswith('--') and a != previo]
 f = args[0] if args else max(glob.glob(os.path.expanduser('~/Downloads/seleccion-fotos*.json')), key=os.path.getmtime)
 d = json.load(open(f))
 print('usando:', os.path.basename(f), d['exportado'])
@@ -76,12 +79,15 @@ def dest_for(p, c, prefix=''):
 
 prev_origen_p = os.path.join(W, 'fotos', 'origen.json')
 prev_on_web = set(json.load(open(prev_origen_p)).values()) if os.path.exists(prev_origen_p) else set()  # fotos que estaban en la web antes de este export
+if previo and os.path.exists(previo):  # también las que solo estaban en works / portada
+    prev_on_web |= {x for v in json.load(open(previo)).get('seleccion', {}).values() for x in v}
 n, seen, web_titles, web_works, origen = 0, set(), {}, {}, {}
 for p, ks in sel.items():
     src = srcpath(p)
     if not os.path.exists(src):
         print('  no existe:', p); continue
     for k in ks:
+        if k not in NAME: continue  # «W»: sin categoría (solo works / portada)
         dest = dest_for(p, NAME[k])
         if dest in seen: continue
         seen.add(dest); os.makedirs(os.path.dirname(dest), exist_ok=True)

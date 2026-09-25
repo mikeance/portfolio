@@ -21,10 +21,20 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
+## Estudio (plataforma interna de Miguel)
+
+- App local: `estudio/server.mjs` (Node, http://localhost:4455) + `estudio/app/` (index.html, main.js, web.js, todas.js, inspector.js, estudio.css). Miguel la abre con `~/Desktop/Estudio.app` (lo crea `estudio/crear-app.sh`; lanza `estudio/abrir.sh`, que reinicia el servidor si cambia `server.mjs`). En desarrollo: `preview_start` con la configuración «estudio».
+- Secciones: MIGUEL ANTÓN (Portada, Editorial, Faces, Life y Works con sus colecciones; mosaico como la web, arrastrar para ordenar, panel para añadir), ALL PICTURES (todas las fotos de la web + «Nuevas»; nombre, secciones y proyecto por foto o en grupo) e INSTAGRAM FEED (`catalogo/instagram.html` en un iframe, tal cual).
+- Estado = mismo formato que los exports: publicado en `catalogo/estado-actual.json`, borrador (se guarda solo) en `catalogo/estudio/borrador.json`. Marca `W` en `seleccion`: foto en la web sin categoría (solo en un work o en la portada).
+- «Nuevas»: fotos añadidas a `~/Desktop/FOTO` después de crear la app (`catalogo/estudio/base.json` = lo que ya había). Solo se ve lo que está en la web y lo nuevo.
+- Botón «Publicar»: `aplicar-seleccion.py <borrador> --no-ocultar --previo estado-actual.json` → prepare-photos + faces + orden-auto → catalog.mjs → instagram-datos.py → commit solo de `public/photos` y `src/data` → build en un worktree limpio de HEAD → `wrangler deploy` → IndexNow → el borrador pasa a `estado-actual.json`.
+- Si Claude cambia la web a mano, debe actualizar también `catalogo/estado-actual.json` (si no, un borrador antiguo lo desharía; la app avisa cuando el borrador se hizo sobre otro estado publicado).
+- `catalogo/index.html` redirige al Estudio; el catálogo antiguo sigue en `catalogo/index-antiguo.html`.
+
 ## Flujo de trabajo del portfolio (mikeance.com)
 
 - Fotos originales en `~/Desktop/FOTO` (no se tocan). Copias para la web en `fotos/` (ignorado por git): `fotos/{faces,editorial,lifestyle,portada}` y `fotos/works/<NN NOMBRE>/[<NN COLECCIÓN>/]`.
-- Catálogo local en `catalogo/` (abrir `catalogo/index.html`, `portada.html`, `textos.html` con file://). Miguel exporta `~/Downloads/seleccion-fotos (N).json`.
+- Catálogo local en `catalogo/` (antes con file://; ahora se usa el Estudio, ver arriba). Miguel exporta `~/Downloads/seleccion-fotos (N).json`.
 - Aplicar un export y publicar, en este orden:
   1. `python3 scripts/aplicar-seleccion.py "~/Downloads/seleccion-fotos (N).json"`
   2. `npm run photos` (prepare-photos + caras + orden automático) o solo `node scripts/prepare-photos.mjs`

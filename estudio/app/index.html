@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estudio · Miguel Antón</title>
+<link rel="icon" href="/public/favicon.svg">
+<link rel="stylesheet" href="/app/estudio.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="#/web/H" title="Estudio"><img src="/public/logo.svg" alt="Miguel Antón"><span>Estudio</span></a>
+  <nav class="tabs">
+    <a href="#/web/H" data-tab="web">Miguel Antón</a>
+    <a href="#/todas" data-tab="todas">All pictures <b class="badge" id="badgeNuevas" hidden></b></a>
+    <a href="#/instagram" data-tab="instagram">Instagram feed</a>
+  </nav>
+  <div class="acciones">
+    <button class="icono" id="deshacer" title="Deshacer (⌘Z)" disabled>↶</button>
+    <button class="icono" id="rehacer" title="Rehacer (⇧⌘Z)" disabled>↷</button>
+    <span class="estado" id="estado"></span>
+    <a class="verweb" href="https://mikeance.com" target="_blank" rel="noopener">Ver web ↗</a>
+    <button class="publicar" id="publicar" disabled>Publicar</button>
+  </div>
+</header>
+<div class="aviso" id="aviso" hidden></div>
+<main id="vista"></main>
+<div class="toast" id="toast" hidden></div>
+<div class="modal" id="modal" hidden><div class="caja" id="modalCaja"></div></div>
+<script type="module" src="/app/main.js"></script>
+</body>
+</html>

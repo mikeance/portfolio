@@ -4,8 +4,19 @@
     {
       "name": "web-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 4321
+    },
+    {
+      "name": "estudio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "estudio/server.mjs"
+      ],
+      "port": 4455
     }
   ]
 }
